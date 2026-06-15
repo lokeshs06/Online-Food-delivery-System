@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import * as Lucide from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { useNavigate, useLocation } from 'react-router-dom';
-import AdminOffersTab from '../components/AdminOffersTab';
+import React, { useState, useEffect } from "react";
+import * as Lucide from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import AdminOffersTab from "../components/AdminOffersTab";
 
 export default function AdminDashboard() {
-  const { user, token, addNotification } = useApp();
+  const { user, token, addNotification, API_BASE_URL } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Sync tab with URL
   useEffect(() => {
     const path = location.pathname;
-    if (path.includes('/admin/users')) setActiveTab('users');
-    else if (path.includes('/admin/restaurants')) setActiveTab('restaurants');
-    else if (path.includes('/admin/orders')) setActiveTab('orders');
-    else if (path.includes('/admin/categories')) setActiveTab('categories');
-    else if (path.includes('/admin/coupons')) setActiveTab('coupons');
-    else if (path.includes('/admin/offers')) setActiveTab('offers');
-    else setActiveTab('overview');
+    if (path.includes("/admin/users")) setActiveTab("users");
+    else if (path.includes("/admin/restaurants")) setActiveTab("restaurants");
+    else if (path.includes("/admin/orders")) setActiveTab("orders");
+    else if (path.includes("/admin/categories")) setActiveTab("categories");
+    else if (path.includes("/admin/coupons")) setActiveTab("coupons");
+    else if (path.includes("/admin/offers")) setActiveTab("offers");
+    else setActiveTab("overview");
   }, [location.pathname]);
 
   const [loading, setLoading] = useState(true);
@@ -35,19 +35,19 @@ export default function AdminDashboard() {
   // Category Modal State
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [catName, setCatName] = useState('');
-  const [catImage, setCatImage] = useState('');
+  const [catName, setCatName] = useState("");
+  const [catImage, setCatImage] = useState("");
   const [catActive, setCatActive] = useState(true);
   const [savingCategory, setSavingCategory] = useState(false);
 
   // Coupon Modal State
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState(null);
-  const [coupCode, setCoupCode] = useState('');
-  const [coupDiscountType, setCoupDiscountType] = useState('percentage');
-  const [coupDiscountAmount, setCoupDiscountAmount] = useState('');
-  const [coupExpiry, setCoupExpiry] = useState('');
-  const [coupUsageLimit, setCoupUsageLimit] = useState('');
+  const [coupCode, setCoupCode] = useState("");
+  const [coupDiscountType, setCoupDiscountType] = useState("percentage");
+  const [coupDiscountAmount, setCoupDiscountAmount] = useState("");
+  const [coupExpiry, setCoupExpiry] = useState("");
+  const [coupUsageLimit, setCoupUsageLimit] = useState("");
   const [coupActive, setCoupActive] = useState(true);
   const [savingCoupon, setSavingCoupon] = useState(false);
 
@@ -63,13 +63,20 @@ export default function AdminDashboard() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [resAnalytics, resRestaurants, resUsers, resOrders, resCategories, resCoupons] = await Promise.all([
-        fetch('http://localhost:5000/api/admin/analytics', { headers }),
-        fetch('http://localhost:5000/api/admin/restaurants', { headers }),
-        fetch('http://localhost:5000/api/admin/users', { headers }),
-        fetch('http://localhost:5000/api/admin/orders', { headers }),
-        fetch('http://localhost:5000/api/categories/admin', { headers }),
-        fetch('http://localhost:5000/api/coupons', { headers })
+      const [
+        resAnalytics,
+        resRestaurants,
+        resUsers,
+        resOrders,
+        resCategories,
+        resCoupons,
+      ] = await Promise.all([
+        fetch(`${API_BASE_URL}/admin/analytics`, { headers }),
+        fetch(`${API_BASE_URL}/admin/restaurants`, { headers }),
+        fetch(`${API_BASE_URL}/admin/users`, { headers }),
+        fetch(`${API_BASE_URL}/admin/orders`, { headers }),
+        fetch(`${API_BASE_URL}/categories/admin`, { headers }),
+        fetch(`${API_BASE_URL}/coupons`, { headers }),
       ]);
 
       const dataAnalytics = await resAnalytics.json();
@@ -85,9 +92,8 @@ export default function AdminDashboard() {
       if (dataOrders.success) setOrders(dataOrders.data);
       if (dataCategories.success) setCategories(dataCategories.data);
       if (dataCoupons.success) setCoupons(dataCoupons.data);
-
     } catch (err) {
-      addNotification('Failed to fetch admin data.', 'error');
+      addNotification("Failed to fetch admin data.", "error");
     } finally {
       setLoading(false);
     }
@@ -96,74 +102,83 @@ export default function AdminDashboard() {
   // Actions
   const toggleRestaurantApproval = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/restaurants/${id}/toggle-approval`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/admin/restaurants/${id}/toggle-approval`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await res.json();
       if (data.success) {
-        addNotification('Restaurant approval updated', 'success');
-        setRestaurants(restaurants.map(r => r._id === id ? data.data : r));
+        addNotification("Restaurant approval updated", "success");
+        setRestaurants(restaurants.map((r) => (r._id === id ? data.data : r)));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to update approval', 'error');
+      addNotification("Failed to update approval", "error");
     }
   };
 
   const toggleRestaurantActive = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/restaurants/${id}/toggle-active`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/admin/restaurants/${id}/toggle-active`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await res.json();
       if (data.success) {
-        addNotification('Restaurant active status updated', 'success');
-        setRestaurants(restaurants.map(r => r._id === id ? data.data : r));
+        addNotification("Restaurant active status updated", "success");
+        setRestaurants(restaurants.map((r) => (r._id === id ? data.data : r)));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to update status', 'error');
+      addNotification("Failed to update status", "error");
     }
   };
 
   const toggleUserBlock = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}/toggle-block`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/admin/users/${id}/toggle-block`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await res.json();
       if (data.success) {
-        addNotification('User block status updated', 'success');
-        setUsers(users.map(u => u._id === id ? data.data : u));
+        addNotification("User block status updated", "success");
+        setUsers(users.map((u) => (u._id === id ? data.data : u)));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to update user', 'error');
+      addNotification("Failed to update user", "error");
     }
   };
 
   const deleteUser = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${API_BASE_URL}/admin/users/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
-        addNotification('User deleted', 'success');
-        setUsers(users.filter(u => u._id !== id));
+        addNotification("User deleted", "success");
+        setUsers(users.filter((u) => u._id !== id));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to delete user', 'error');
+      addNotification("Failed to delete user", "error");
     }
   };
 
@@ -172,75 +187,99 @@ export default function AdminDashboard() {
     e.preventDefault();
     setSavingCategory(true);
     try {
-      const payload = { name: catName, imageUrl: catImage, isActive: catActive };
+      const payload = {
+        name: catName,
+        imageUrl: catImage,
+        isActive: catActive,
+      };
       let res;
       if (editingCategory) {
-        res = await fetch(`http://localhost:5000/api/categories/${editingCategory._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload)
-        });
+        res = await fetch(
+          `${API_BASE_URL}/categories/${editingCategory._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
       } else {
-        res = await fetch('http://localhost:5000/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload)
+        res = await fetch(`${API_BASE_URL}/categories`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         });
       }
       const data = await res.json();
       if (data.success) {
-        addNotification(editingCategory ? 'Category updated' : 'Category created', 'success');
+        addNotification(
+          editingCategory ? "Category updated" : "Category created",
+          "success",
+        );
         if (editingCategory) {
-          setCategories(categories.map(c => c._id === editingCategory._id ? data.data : c));
+          setCategories(
+            categories.map((c) =>
+              c._id === editingCategory._id ? data.data : c,
+            ),
+          );
         } else {
           setCategories([...categories, data.data]);
         }
         setShowCategoryModal(false);
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to save category', 'error');
+      addNotification("Failed to save category", "error");
     } finally {
       setSavingCategory(false);
     }
   };
 
   const deleteCategory = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    if (!window.confirm("Are you sure you want to delete this category?"))
+      return;
     try {
-      const res = await fetch(`http://localhost:5000/api/categories/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
-        addNotification('Category deleted', 'success');
-        setCategories(categories.filter(c => c._id !== id));
+        addNotification("Category deleted", "success");
+        setCategories(categories.filter((c) => c._id !== id));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to delete category', 'error');
+      addNotification("Failed to delete category", "error");
     }
   };
 
   const toggleCategoryActive = async (id, currentStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/categories/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ isActive: !currentStatus })
+      const res = await fetch(`${API_BASE_URL}/categories/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
       const data = await res.json();
       if (data.success) {
-        addNotification('Category status updated', 'success');
-        setCategories(categories.map(c => c._id === id ? data.data : c));
+        addNotification("Category status updated", "success");
+        setCategories(categories.map((c) => (c._id === id ? data.data : c)));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to update category status', 'error');
+      addNotification("Failed to update category status", "error");
     }
   };
 
@@ -255,97 +294,116 @@ export default function AdminDashboard() {
         discountAmount: parseFloat(coupDiscountAmount),
         expiryDate: coupExpiry ? new Date(coupExpiry).toISOString() : null,
         usageLimit: coupUsageLimit ? parseInt(coupUsageLimit) : null,
-        isActive: coupActive
+        isActive: coupActive,
       };
 
       let res;
       if (editingCoupon) {
-        res = await fetch(`http://localhost:5000/api/coupons/${editingCoupon._id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload)
-        });
+        res = await fetch(
+          `${API_BASE_URL}/coupons/${editingCoupon._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
       } else {
-        res = await fetch('http://localhost:5000/api/coupons', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload)
+        res = await fetch(`${API_BASE_URL}/coupons`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         });
       }
       const data = await res.json();
       if (data.success) {
-        addNotification(editingCoupon ? 'Coupon updated' : 'Coupon created', 'success');
+        addNotification(
+          editingCoupon ? "Coupon updated" : "Coupon created",
+          "success",
+        );
         if (editingCoupon) {
-          setCoupons(coupons.map(c => c._id === editingCoupon._id ? data.data : c));
+          setCoupons(
+            coupons.map((c) => (c._id === editingCoupon._id ? data.data : c)),
+          );
         } else {
           setCoupons([...coupons, data.data]);
         }
         setShowCouponModal(false);
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to save coupon', 'error');
+      addNotification("Failed to save coupon", "error");
     } finally {
       setSavingCoupon(false);
     }
   };
 
   const deleteCoupon = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this coupon?')) return;
+    if (!window.confirm("Are you sure you want to delete this coupon?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/coupons/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch(`${API_BASE_URL}/coupons/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
-        addNotification('Coupon deleted', 'success');
-        setCoupons(coupons.filter(c => c._id !== id));
+        addNotification("Coupon deleted", "success");
+        setCoupons(coupons.filter((c) => c._id !== id));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to delete coupon', 'error');
+      addNotification("Failed to delete coupon", "error");
     }
   };
 
   const toggleCouponActive = async (id, currentStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/coupons/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ isActive: !currentStatus })
+      const res = await fetch(`${API_BASE_URL}/coupons/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
       const data = await res.json();
       if (data.success) {
-        addNotification('Coupon status updated', 'success');
-        setCoupons(coupons.map(c => c._id === id ? data.data : c));
+        addNotification("Coupon status updated", "success");
+        setCoupons(coupons.map((c) => (c._id === id ? data.data : c)));
       } else {
-        addNotification(data.error, 'error');
+        addNotification(data.error, "error");
       }
     } catch (err) {
-      addNotification('Failed to update coupon status', 'error');
+      addNotification("Failed to update coupon status", "error");
     }
   };
 
   // Renderers
   const renderSidebar = () => {
     const tabs = [
-      { id: 'overview', label: 'Overview', icon: Lucide.LayoutDashboard },
-      { id: 'restaurants', label: 'Restaurants', icon: Lucide.Store },
-      { id: 'users', label: 'Users', icon: Lucide.Users },
-      { id: 'orders', label: 'Orders', icon: Lucide.ShoppingBag },
-      { id: 'categories', label: 'Categories', icon: Lucide.Tag },
-      { id: 'coupons', label: 'Coupons', icon: Lucide.Ticket },
-      { id: 'offers', label: 'Offers', icon: Lucide.Tags },
+      { id: "overview", label: "Overview", icon: Lucide.LayoutDashboard },
+      { id: "restaurants", label: "Restaurants", icon: Lucide.Store },
+      { id: "users", label: "Users", icon: Lucide.Users },
+      { id: "orders", label: "Orders", icon: Lucide.ShoppingBag },
+      { id: "categories", label: "Categories", icon: Lucide.Tag },
+      { id: "coupons", label: "Coupons", icon: Lucide.Ticket },
+      { id: "offers", label: "Offers", icon: Lucide.Tags },
     ];
 
     return (
       <div className="w-64 shrink-0 pr-8 hidden lg:block">
         <div className="sticky top-28">
           <div className="mb-6 px-3">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Admin Panel</h2>
+            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+              Admin Panel
+            </h2>
           </div>
           <nav className="space-y-1">
             {tabs.map((tab) => {
@@ -356,12 +414,15 @@ export default function AdminDashboard() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                    isActive 
-                      ? 'bg-brand-50 text-brand-600' 
-                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                    isActive
+                      ? "bg-brand-50 text-brand-600"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <Icon size={18} className={isActive ? 'text-brand-500' : 'text-slate-400'} />
+                  <Icon
+                    size={18}
+                    className={isActive ? "text-brand-500" : "text-slate-400"}
+                  />
                   <span>{tab.label}</span>
                 </button>
               );
@@ -375,28 +436,73 @@ export default function AdminDashboard() {
   const renderOverview = () => {
     if (!analytics) return null;
     const cards = [
-      { title: 'Total Revenue', value: `$${analytics.totalRevenue.toFixed(2)}`, icon: Lucide.DollarSign, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-      { title: 'Monthly Revenue', value: `$${analytics.monthlyRevenue.toFixed(2)}`, icon: Lucide.TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-      { title: 'Total Orders', value: analytics.totalOrders, icon: Lucide.ShoppingBag, color: 'text-blue-500', bg: 'bg-blue-50' },
-      { title: 'Completed Orders', value: analytics.completedOrders, icon: Lucide.CheckCircle, color: 'text-brand-500', bg: 'bg-brand-50' },
-      { title: 'Total Customers', value: analytics.totalCustomers, icon: Lucide.Users, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-      { title: 'Pending Approvals', value: analytics.pendingRestaurants, icon: Lucide.Store, color: 'text-amber-500', bg: 'bg-amber-50' }
+      {
+        title: "Total Revenue",
+        value: `$${analytics.totalRevenue.toFixed(2)}`,
+        icon: Lucide.DollarSign,
+        color: "text-emerald-500",
+        bg: "bg-emerald-50",
+      },
+      {
+        title: "Monthly Revenue",
+        value: `$${analytics.monthlyRevenue.toFixed(2)}`,
+        icon: Lucide.TrendingUp,
+        color: "text-emerald-500",
+        bg: "bg-emerald-50",
+      },
+      {
+        title: "Total Orders",
+        value: analytics.totalOrders,
+        icon: Lucide.ShoppingBag,
+        color: "text-blue-500",
+        bg: "bg-blue-50",
+      },
+      {
+        title: "Completed Orders",
+        value: analytics.completedOrders,
+        icon: Lucide.CheckCircle,
+        color: "text-brand-500",
+        bg: "bg-brand-50",
+      },
+      {
+        title: "Total Customers",
+        value: analytics.totalCustomers,
+        icon: Lucide.Users,
+        color: "text-indigo-500",
+        bg: "bg-indigo-50",
+      },
+      {
+        title: "Pending Approvals",
+        value: analytics.pendingRestaurants,
+        icon: Lucide.Store,
+        color: "text-amber-500",
+        bg: "bg-amber-50",
+      },
     ];
 
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-slate-900">Platform Analytics</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Platform Analytics
+        </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {cards.map((card, i) => {
             const Icon = card.icon;
             return (
-              <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+              <div
+                key={i}
+                className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4"
+              >
                 <div className={`p-3 rounded-xl ${card.bg} ${card.color}`}>
                   <Icon size={24} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{card.title}</p>
-                  <p className="text-2xl font-black text-slate-900">{card.value}</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    {card.title}
+                  </p>
+                  <p className="text-2xl font-black text-slate-900">
+                    {card.value}
+                  </p>
                 </div>
               </div>
             );
@@ -409,7 +515,9 @@ export default function AdminDashboard() {
   const renderRestaurants = () => {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-slate-900">Restaurant Management</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Restaurant Management
+        </h1>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[600px]">
             <thead>
@@ -422,40 +530,57 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {restaurants.map(rest => (
-                <tr key={rest._id} className="hover:bg-slate-50 transition-colors">
+              {restaurants.map((rest) => (
+                <tr
+                  key={rest._id}
+                  className="hover:bg-slate-50 transition-colors"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <img src={rest.imageUrl} alt={rest.name} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                      <img
+                        src={rest.imageUrl}
+                        alt={rest.name}
+                        className="w-10 h-10 rounded-lg object-cover bg-slate-100"
+                      />
                       <div>
-                        <p className="font-bold text-sm text-slate-900">{rest.name}</p>
-                        <p className="text-xs text-slate-500">{rest.location}</p>
+                        <p className="font-bold text-sm text-slate-900">
+                          {rest.name}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {rest.location}
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{rest.owner?.name || 'Unknown'}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    {rest.owner?.name || "Unknown"}
+                  </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${rest.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                      {rest.isActive ? 'Active' : 'Suspended'}
+                    <span
+                      className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${rest.isActive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}
+                    >
+                      {rest.isActive ? "Active" : "Suspended"}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${rest.isApproved ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
-                      {rest.isApproved ? 'Approved' : 'Pending'}
+                    <span
+                      className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${rest.isApproved ? "bg-blue-50 text-blue-600 border border-blue-200" : "bg-amber-50 text-amber-600 border border-amber-200"}`}
+                    >
+                      {rest.isApproved ? "Approved" : "Pending"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button 
+                    <button
                       onClick={() => toggleRestaurantApproval(rest._id)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                     >
-                      {rest.isApproved ? 'Revoke' : 'Approve'}
+                      {rest.isApproved ? "Revoke" : "Approve"}
                     </button>
-                    <button 
+                    <button
                       onClick={() => toggleRestaurantActive(rest._id)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                     >
-                      {rest.isActive ? 'Suspend' : 'Activate'}
+                      {rest.isActive ? "Suspend" : "Activate"}
                     </button>
                   </td>
                 </tr>
@@ -463,7 +588,9 @@ export default function AdminDashboard() {
             </tbody>
           </table>
           {restaurants.length === 0 && (
-            <div className="p-8 text-center text-slate-500 font-medium">No restaurants found.</div>
+            <div className="p-8 text-center text-slate-500 font-medium">
+              No restaurants found.
+            </div>
           )}
         </div>
       </div>
@@ -485,7 +612,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {users.map(u => (
+              {users.map((u) => (
                 <tr key={u._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-bold text-sm text-slate-900">{u.name}</p>
@@ -493,24 +620,26 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
-                      {u.role.replace('_', ' ')}
+                      {u.role.replace("_", " ")}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${u.isBlocked ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
-                      {u.isBlocked ? 'Blocked' : 'Active'}
+                    <span
+                      className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${u.isBlocked ? "bg-rose-50 text-rose-600 border border-rose-200" : "bg-emerald-50 text-emerald-600 border border-emerald-200"}`}
+                    >
+                      {u.isBlocked ? "Blocked" : "Active"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    {u.role !== 'admin' && (
+                    {u.role !== "admin" && (
                       <>
-                        <button 
+                        <button
                           onClick={() => toggleUserBlock(u._id)}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                         >
-                          {u.isBlocked ? 'Unblock' : 'Block'}
+                          {u.isBlocked ? "Unblock" : "Block"}
                         </button>
-                        <button 
+                        <button
                           onClick={() => deleteUser(u._id)}
                           className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
                         >
@@ -531,29 +660,49 @@ export default function AdminDashboard() {
   const renderOrders = () => {
     const statusStyle = (status) => {
       switch (status) {
-        case 'pending': return 'bg-yellow-50 text-yellow-600 border-yellow-200';
-        case 'accepted': return 'bg-blue-50 text-blue-600 border-blue-200';
-        case 'preparing': return 'bg-orange-50 text-orange-600 border-orange-200';
-        case 'ready': return 'bg-purple-50 text-purple-600 border-purple-200';
-        case 'out-for-delivery': return 'bg-indigo-50 text-indigo-600 border-indigo-200';
-        case 'delivered': return 'bg-emerald-50 text-emerald-600 border-emerald-200';
-        case 'cancelled': return 'bg-rose-50 text-rose-600 border-rose-200';
-        default: return 'bg-slate-100 text-slate-600 border-slate-200';
+        case "pending":
+          return "bg-yellow-50 text-yellow-600 border-yellow-200";
+        case "accepted":
+          return "bg-blue-50 text-blue-600 border-blue-200";
+        case "preparing":
+          return "bg-orange-50 text-orange-600 border-orange-200";
+        case "ready":
+          return "bg-purple-50 text-purple-600 border-purple-200";
+        case "out-for-delivery":
+          return "bg-indigo-50 text-indigo-600 border-indigo-200";
+        case "delivered":
+          return "bg-emerald-50 text-emerald-600 border-emerald-200";
+        case "cancelled":
+          return "bg-rose-50 text-rose-600 border-rose-200";
+        default:
+          return "bg-slate-100 text-slate-600 border-slate-200";
       }
     };
 
-    const cancelledCount = orders.filter(o => o.status === 'cancelled').length;
-    const deliveredCount = orders.filter(o => o.status === 'delivered').length;
-    const activeCount = orders.filter(o => !['delivered', 'cancelled'].includes(o.status)).length;
+    const cancelledCount = orders.filter(
+      (o) => o.status === "cancelled",
+    ).length;
+    const deliveredCount = orders.filter(
+      (o) => o.status === "delivered",
+    ).length;
+    const activeCount = orders.filter(
+      (o) => !["delivered", "cancelled"].includes(o.status),
+    ).length;
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-slate-900">Platform Orders</h1>
           <div className="flex items-center space-x-3 text-xs font-bold">
-            <span className="px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">{activeCount} Active</span>
-            <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">{deliveredCount} Delivered</span>
-            <span className="px-3 py-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200">{cancelledCount} Cancelled</span>
+            <span className="px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+              {activeCount} Active
+            </span>
+            <span className="px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+              {deliveredCount} Delivered
+            </span>
+            <span className="px-3 py-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200">
+              {cancelledCount} Cancelled
+            </span>
           </div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
@@ -570,28 +719,49 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {orders.map(order => (
-                <tr key={order._id} className={`transition-colors ${order.status === 'cancelled' ? 'bg-rose-50/30' : 'hover:bg-slate-50'}`}>
-                  <td className="px-6 py-4 font-mono text-xs text-slate-500">#{order._id.slice(-6).toUpperCase()}</td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-semibold text-slate-900">{order.customer?.name || 'Guest'}</p>
-                    <p className="text-xs text-slate-400">{order.customer?.email}</p>
+              {orders.map((order) => (
+                <tr
+                  key={order._id}
+                  className={`transition-colors ${order.status === "cancelled" ? "bg-rose-50/30" : "hover:bg-slate-50"}`}
+                >
+                  <td className="px-6 py-4 font-mono text-xs text-slate-500">
+                    #{order._id.slice(-6).toUpperCase()}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{order.restaurant?.name || 'Unknown'}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-slate-900">${order.totalAmount.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-xs text-slate-500 uppercase">{order.paymentMethod}</td>
                   <td className="px-6 py-4">
-                    <span className={`whitespace-nowrap px-2 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wider ${statusStyle(order.status)}`}>
-                      {order.status.replace(/-/g, ' ')}
+                    <p className="text-sm font-semibold text-slate-900">
+                      {order.customer?.name || "Guest"}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {order.customer?.email}
+                    </p>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    {order.restaurant?.name || "Unknown"}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-slate-900">
+                    ${order.totalAmount.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 text-xs text-slate-500 uppercase">
+                    {order.paymentMethod}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`whitespace-nowrap px-2 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wider ${statusStyle(order.status)}`}
+                    >
+                      {order.status.replace(/-/g, " ")}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-xs text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-xs text-slate-500">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {orders.length === 0 && (
-            <div className="p-8 text-center text-slate-500 font-medium">No orders found.</div>
+            <div className="p-8 text-center text-slate-500 font-medium">
+              No orders found.
+            </div>
           )}
         </div>
       </div>
@@ -603,11 +773,11 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
-          <button 
+          <button
             onClick={() => {
               setEditingCategory(null);
-              setCatName('');
-              setCatImage('');
+              setCatName("");
+              setCatImage("");
               setCatActive(true);
               setShowCategoryModal(true);
             }}
@@ -628,29 +798,37 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {categories.map(c => (
+              {categories.map((c) => (
                 <tr key={c._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
-                    <img src={c.imageUrl || 'https://via.placeholder.com/40'} alt={c.name} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
+                    <img
+                      src={c.imageUrl || "https://via.placeholder.com/40"}
+                      alt={c.name}
+                      className="w-10 h-10 rounded-lg object-cover bg-slate-100"
+                    />
                   </td>
-                  <td className="px-6 py-4 font-bold text-sm text-slate-900">{c.name}</td>
+                  <td className="px-6 py-4 font-bold text-sm text-slate-900">
+                    {c.name}
+                  </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${c.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                      {c.isActive ? 'Active' : 'Disabled'}
+                    <span
+                      className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${c.isActive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}
+                    >
+                      {c.isActive ? "Active" : "Disabled"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button 
+                    <button
                       onClick={() => toggleCategoryActive(c._id, c.isActive)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                     >
-                      {c.isActive ? 'Disable' : 'Enable'}
+                      {c.isActive ? "Disable" : "Enable"}
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         setEditingCategory(c);
                         setCatName(c.name);
-                        setCatImage(c.imageUrl || '');
+                        setCatImage(c.imageUrl || "");
                         setCatActive(c.isActive);
                         setShowCategoryModal(true);
                       }}
@@ -658,7 +836,7 @@ export default function AdminDashboard() {
                     >
                       Edit
                     </button>
-                    <button 
+                    <button
                       onClick={() => deleteCategory(c._id)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
                     >
@@ -670,7 +848,9 @@ export default function AdminDashboard() {
             </tbody>
           </table>
           {categories.length === 0 && (
-            <div className="p-8 text-center text-slate-500 font-medium">No categories found.</div>
+            <div className="p-8 text-center text-slate-500 font-medium">
+              No categories found.
+            </div>
           )}
         </div>
       </div>
@@ -682,14 +862,14 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-slate-900">Coupons</h1>
-          <button 
+          <button
             onClick={() => {
               setEditingCoupon(null);
-              setCoupCode('');
-              setCoupDiscountType('percentage');
-              setCoupDiscountAmount('');
-              setCoupExpiry('');
-              setCoupUsageLimit('');
+              setCoupCode("");
+              setCoupDiscountType("percentage");
+              setCoupDiscountAmount("");
+              setCoupExpiry("");
+              setCoupUsageLimit("");
               setCoupActive(true);
               setShowCouponModal(true);
             }}
@@ -711,7 +891,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {coupons.map(c => (
+              {coupons.map((c) => (
                 <tr key={c._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
                     <span className="font-mono font-bold text-brand-600 bg-brand-50 px-2 py-1 rounded-md border border-brand-200">
@@ -719,34 +899,48 @@ export default function AdminDashboard() {
                     </span>
                   </td>
                   <td className="px-6 py-4 font-bold text-sm text-slate-900">
-                    {c.discountType === 'percentage' ? `${c.discountAmount}%` : `$${c.discountAmount.toFixed(2)}`}
+                    {c.discountType === "percentage"
+                      ? `${c.discountAmount}%`
+                      : `$${c.discountAmount.toFixed(2)}`}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-xs text-slate-500">
-                      <div>Used: {c.timesUsed} / {c.usageLimit || '∞'}</div>
-                      {c.expiryDate && <div>Expires: {new Date(c.expiryDate).toLocaleDateString()}</div>}
+                      <div>
+                        Used: {c.timesUsed} / {c.usageLimit || "∞"}
+                      </div>
+                      {c.expiryDate && (
+                        <div>
+                          Expires: {new Date(c.expiryDate).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${c.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
-                      {c.isActive ? 'Active' : 'Disabled'}
+                    <span
+                      className={`px-2 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${c.isActive ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-slate-100 text-slate-600 border border-slate-200"}`}
+                    >
+                      {c.isActive ? "Active" : "Disabled"}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button 
+                    <button
                       onClick={() => toggleCouponActive(c._id, c.isActive)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                     >
-                      {c.isActive ? 'Disable' : 'Enable'}
+                      {c.isActive ? "Disable" : "Enable"}
                     </button>
-                    <button 
+                    <button
                       onClick={() => {
                         setEditingCoupon(c);
                         setCoupCode(c.code);
                         setCoupDiscountType(c.discountType);
                         setCoupDiscountAmount(c.discountAmount);
-                        setCoupExpiry(c.expiryDate ? new Date(c.expiryDate).toISOString().split('T')[0] : '');
-                        setCoupUsageLimit(c.usageLimit || '');
+                        setCoupExpiry(
+                          c.expiryDate
+                            ? new Date(c.expiryDate).toISOString().split("T")[0]
+                            : "",
+                        );
+                        setCoupUsageLimit(c.usageLimit || "");
                         setCoupActive(c.isActive);
                         setShowCouponModal(true);
                       }}
@@ -754,7 +948,7 @@ export default function AdminDashboard() {
                     >
                       Edit
                     </button>
-                    <button 
+                    <button
                       onClick={() => deleteCoupon(c._id)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
                     >
@@ -766,7 +960,9 @@ export default function AdminDashboard() {
             </tbody>
           </table>
           {coupons.length === 0 && (
-            <div className="p-8 text-center text-slate-500 font-medium">No coupons found.</div>
+            <div className="p-8 text-center text-slate-500 font-medium">
+              No coupons found.
+            </div>
           )}
         </div>
       </div>
@@ -783,13 +979,13 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <>
-            {activeTab === 'overview' && renderOverview()}
-            {activeTab === 'restaurants' && renderRestaurants()}
-            {activeTab === 'users' && renderUsers()}
-            {activeTab === 'orders' && renderOrders()}
-            {activeTab === 'categories' && renderCategories()}
-            {activeTab === 'coupons' && renderCoupons()}
-            {activeTab === 'offers' && <AdminOffersTab />}
+            {activeTab === "overview" && renderOverview()}
+            {activeTab === "restaurants" && renderRestaurants()}
+            {activeTab === "users" && renderUsers()}
+            {activeTab === "orders" && renderOrders()}
+            {activeTab === "categories" && renderCategories()}
+            {activeTab === "coupons" && renderCoupons()}
+            {activeTab === "offers" && <AdminOffersTab />}
           </>
         )}
       </div>
@@ -805,9 +1001,12 @@ export default function AdminDashboard() {
               <Lucide.X size={16} />
             </button>
             <h3 className="text-lg font-black text-[#1A1A1A] mb-4">
-              {editingCategory ? 'Edit Category' : 'Add New Category'}
+              {editingCategory ? "Edit Category" : "Add New Category"}
             </h3>
-            <form onSubmit={handleCategorySubmit} className="space-y-4 text-left">
+            <form
+              onSubmit={handleCategorySubmit}
+              className="space-y-4 text-left"
+            >
               <div>
                 <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
                   Category Name
@@ -839,7 +1038,10 @@ export default function AdminDashboard() {
                   onChange={(e) => setCatActive(e.target.checked)}
                   className="rounded border-slate-300 text-brand-600 focus:ring-0"
                 />
-                <label htmlFor="catActive" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                <label
+                  htmlFor="catActive"
+                  className="text-xs font-semibold text-slate-700 cursor-pointer"
+                >
                   Category is Active
                 </label>
               </div>
@@ -848,7 +1050,7 @@ export default function AdminDashboard() {
                 disabled={savingCategory}
                 className="w-full py-3 mt-2 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-lg disabled:opacity-50 transition-colors"
               >
-                {savingCategory ? 'Saving...' : 'Save Category'}
+                {savingCategory ? "Saving..." : "Save Category"}
               </button>
             </form>
           </div>
@@ -866,7 +1068,7 @@ export default function AdminDashboard() {
               <Lucide.X size={16} />
             </button>
             <h3 className="text-lg font-black text-[#1A1A1A] mb-4">
-              {editingCoupon ? 'Edit Coupon' : 'Create New Coupon'}
+              {editingCoupon ? "Edit Coupon" : "Create New Coupon"}
             </h3>
             <form onSubmit={handleCouponSubmit} className="space-y-4 text-left">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -933,7 +1135,7 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2 pt-2">
                 <input
                   type="checkbox"
@@ -942,7 +1144,10 @@ export default function AdminDashboard() {
                   onChange={(e) => setCoupActive(e.target.checked)}
                   className="rounded border-slate-300 text-brand-600 focus:ring-0"
                 />
-                <label htmlFor="coupActive" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                <label
+                  htmlFor="coupActive"
+                  className="text-xs font-semibold text-slate-700 cursor-pointer"
+                >
                   Coupon is Active
                 </label>
               </div>
@@ -951,13 +1156,12 @@ export default function AdminDashboard() {
                 disabled={savingCoupon}
                 className="w-full py-3 mt-2 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-lg disabled:opacity-50 transition-colors"
               >
-                {savingCoupon ? 'Saving...' : 'Save Coupon'}
+                {savingCoupon ? "Saving..." : "Save Coupon"}
               </button>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }
