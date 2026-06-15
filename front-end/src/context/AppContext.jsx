@@ -1,30 +1,33 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext } from "react";
 
 const AppContext = createContext();
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 export const AppProvider = ({ children }) => {
   // Navigation
   const [targetSection, setTargetSection] = useState(null); // For anchor scrolling on Home
-  const [profileActiveTab, setProfileActiveTab] = useState('orders'); // orders, profile, password, addresses, favorites
+  const [profileActiveTab, setProfileActiveTab] = useState("orders"); // orders, profile, password, addresses, favorites
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(null);
   const [scrollToMenu, setScrollToMenu] = useState(false); // When true, RestaurantDetail scrolls to menu
   const [trackingOrderId, setTrackingOrderId] = useState(null);
 
   // Authentication State
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('ofds_token') || null);
+  const [token, setToken] = useState(
+    localStorage.getItem("ofds_token") || null,
+  );
   const [authLoading, setAuthLoading] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [favoriteFoods, setFavoriteFoods] = useState([]);
 
   // Cart State
   const [cart, setCart] = useState(() => {
-    const savedCart = localStorage.getItem('ofds_cart');
+    const savedCart = localStorage.getItem("ofds_cart");
     return savedCart ? JSON.parse(savedCart) : [];
   });
-  
+
   // Notifications (Toasts)
   const [notifications, setNotifications] = useState([]);
 
@@ -37,15 +40,15 @@ export const AppProvider = ({ children }) => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       const data = await res.json();
       if (data.success) {
         setUser(data.user);
         setFavorites(data.user.favorites || []);
         setFavoriteFoods(data.user.favoriteItems || []);
-        if (data.user.role === 'restaurant_owner') {
+        if (data.user.role === "restaurant_owner") {
           // let the routing handle it
         }
       } else {
@@ -53,7 +56,7 @@ export const AppProvider = ({ children }) => {
         logout();
       }
     } catch (err) {
-      console.error('Failed to load user profile:', err);
+      console.error("Failed to load user profile:", err);
     } finally {
       setAuthLoading(false);
     }
@@ -65,11 +68,11 @@ export const AppProvider = ({ children }) => {
 
   // Sync cart to localStorage
   useEffect(() => {
-    localStorage.setItem('ofds_cart', JSON.stringify(cart));
+    localStorage.setItem("ofds_cart", JSON.stringify(cart));
   }, [cart]);
 
   // Notification Toast Helper
-  const addNotification = (message, type = 'info') => {
+  const addNotification = (message, type = "info") => {
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -81,24 +84,24 @@ export const AppProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem('ofds_token', data.token);
+        localStorage.setItem("ofds_token", data.token);
         setToken(data.token);
         setUser(data.user);
         setFavorites(data.user.favorites || []);
         setFavoriteFoods(data.user.favoriteItems || []);
-        addNotification(`Welcome back, ${data.user.name}!`, 'success');
+        addNotification(`Welcome back, ${data.user.name}!`, "success");
         return { success: true };
       } else {
         return { success: false, error: data.error };
       }
     } catch (err) {
-      return { success: false, error: 'Server connection failed' };
+      return { success: false, error: "Server connection failed" };
     }
   };
 
@@ -106,42 +109,48 @@ export const AppProvider = ({ children }) => {
   const register = async (name, email, password, role) => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, role })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role }),
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem('ofds_token', data.token);
+        localStorage.setItem("ofds_token", data.token);
         setToken(data.token);
         setUser(data.user);
         setFavorites(data.user.favorites || []);
         setFavoriteFoods(data.user.favoriteItems || []);
-        addNotification(`Account created! Welcome, ${data.user.name}!`, 'success');
+        addNotification(
+          `Account created! Welcome, ${data.user.name}!`,
+          "success",
+        );
         return { success: true };
       } else {
         return { success: false, error: data.error };
       }
     } catch (err) {
-      return { success: false, error: 'Server connection failed' };
+      return { success: false, error: "Server connection failed" };
     }
   };
 
   // Logout
   const logout = () => {
-    localStorage.removeItem('ofds_token');
+    localStorage.removeItem("ofds_token");
     setToken(null);
     setUser(null);
     setFavorites([]);
     setFavoriteFoods([]);
     setCart([]);
-    addNotification('Logged out successfully', 'info');
+    addNotification("Logged out successfully", "info");
   };
 
   // Cart Operations
   const addToCart = (restaurantId, item, quantity, customizations) => {
     if (cart.length > 0 && cart[0].restaurantId !== restaurantId) {
-      addNotification('Cleared cart from previous restaurant to add new items', 'warning');
+      addNotification(
+        "Cleared cart from previous restaurant to add new items",
+        "warning",
+      );
       setCart([{ restaurantId, item, quantity, customizations }]);
       return;
     }
@@ -149,7 +158,7 @@ export const AppProvider = ({ children }) => {
     const existingIndex = cart.findIndex(
       (c) =>
         c.item._id === item._id &&
-        JSON.stringify(c.customizations) === JSON.stringify(customizations)
+        JSON.stringify(c.customizations) === JSON.stringify(customizations),
     );
 
     if (existingIndex > -1) {
@@ -159,7 +168,7 @@ export const AppProvider = ({ children }) => {
     } else {
       setCart([...cart, { restaurantId, item, quantity, customizations }]);
     }
-    addNotification(`${item.name} added to cart!`, 'success');
+    addNotification(`${item.name} added to cart!`, "success");
   };
 
   const removeFromCart = (index) => {
@@ -184,49 +193,58 @@ export const AppProvider = ({ children }) => {
   // Favorites Operations
   const toggleFavorite = async (restaurantId) => {
     if (!user) {
-      addNotification('Please log in to save favorites!', 'warning');
+      addNotification("Please log in to save favorites!", "warning");
       return;
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/favorites/${restaurantId}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const res = await fetch(
+        `${API_BASE_URL}/auth/favorites/${restaurantId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
       const data = await res.json();
       if (data.success) {
         setFavorites(data.favorites);
-        addNotification('Favorites updated', 'success');
+        addNotification("Favorites updated", "success");
       } else {
-        addNotification(data.error || 'Failed to update favorites', 'error');
+        addNotification(data.error || "Failed to update favorites", "error");
       }
     } catch (err) {
-      addNotification('Connection error', 'error');
+      addNotification("Connection error", "error");
     }
   };
 
   const toggleFavoriteFood = async (itemId) => {
     if (!user) {
-      addNotification('Please login to save favorite foods', 'warning');
+      addNotification("Please login to save favorite foods", "warning");
       return;
     }
     try {
       const res = await fetch(`${API_BASE_URL}/auth/favorite-items/${itemId}`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
         const isAdded = data.favoriteItems.includes(itemId);
-        checkAuth(); 
-        addNotification(isAdded ? 'Food added to favorites' : 'Food removed from favorites', 'success');
+        checkAuth();
+        addNotification(
+          isAdded ? "Food added to favorites" : "Food removed from favorites",
+          "success",
+        );
       } else {
-        addNotification(data.error || 'Failed to update favorite foods', 'error');
+        addNotification(
+          data.error || "Failed to update favorite foods",
+          "error",
+        );
       }
     } catch (err) {
-      addNotification('Connection error', 'error');
+      addNotification("Connection error", "error");
     }
   };
 
@@ -272,7 +290,7 @@ export const AppProvider = ({ children }) => {
         toggleFavoriteFood,
         addNotification,
         cartSubtotal,
-        cartItemsCount
+        cartItemsCount,
       }}
     >
       {children}
