@@ -1,0 +1,28 @@
+# Node dependencies
+**/node_modules
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+
+# Environment variables
+.env
+**/.env
+*.env.local
+
+# Build outputs
+**/dist
+**/.vite
+**/.cache
+
+# Logs
+logs
+*.log
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+
+# System files
+.DS_Store
+Thumbs.db

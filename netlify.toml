@@ -1,0 +1,9 @@
+[build]
+  command = "cd front-end && npm install && npm run build"
+  publish = "front-end/dist"
+  environment = { VITE_API_BASE_URL = "https://<your-backend-host>/api" }
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

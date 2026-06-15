@@ -1,0 +1,124 @@
+import React, { useState, useEffect } from 'react';
+import * as Lucide from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+
+export default function Login() {
+  const { login, user } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      let dest = '/';
+      if (user.role === 'restaurant_owner') {
+        dest = '/owner/dashboard';
+      } else if (user.role === 'admin') {
+        dest = '/admin/dashboard';
+      } else if (user.role === 'customer') {
+        dest = '/user/restaurants';
+      }
+
+      navigate(from === '/' ? dest : from, { replace: true });
+    }
+  }, [user, navigate, from]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setLoading(true);
+
+    const res = await login(email, password);
+    if (!res.success) {
+      setAuthError(res.error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-block font-black text-3xl tracking-tight text-[#1A1A1A] hover:text-brand-500 transition-colors mb-2">
+            Foodie
+          </Link>
+          <h3 className="text-2xl font-black text-slate-900 mb-1.5">Welcome Back</h3>
+          <p className="text-sm text-slate-500 font-medium">Login to order your favorite meals</p>
+        </div>
+
+        {authError && (
+          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold flex items-center space-x-2">
+            <Lucide.AlertTriangle size={16} className="shrink-0" />
+            <span>{authError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="john@example.com"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-medium placeholder:text-slate-400"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Password
+              </label>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all pr-12 font-medium placeholder:text-slate-400"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+              >
+                {showPassword ? <Lucide.EyeOff size={18} /> : <Lucide.Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-lg hover:shadow-brand-500/25 transition-all disabled:opacity-50 mt-6"
+          >
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/register"
+            className="text-sm font-semibold text-slate-500 hover:text-brand-500 transition-colors"
+          >
+            Don't have an account? Sign Up
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
