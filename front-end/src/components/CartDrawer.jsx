@@ -1,7 +1,7 @@
-import React from 'react';
-import * as Lucide from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import * as Lucide from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { useNavigate } from "react-router-dom";
 
 export default function CartDrawer({ isOpen, onClose }) {
   const {
@@ -10,23 +10,23 @@ export default function CartDrawer({ isOpen, onClose }) {
     updateCartQuantity,
     cartSubtotal,
     user,
-    addNotification
+    addNotification,
   } = useApp();
-  
+
   const navigate = useNavigate();
 
   if (!isOpen) return null;
 
   const handleCheckoutClick = () => {
     if (cart.length === 0) {
-      addNotification('Your cart is empty!', 'warning');
+      addNotification("Your cart is empty!", "warning");
       return;
     }
     if (!user) {
-      addNotification('Please sign in to complete your checkout!', 'warning');
+      addNotification("Please sign in to complete your checkout!", "warning");
       return;
     }
-    navigate('/user/checkout');
+    navigate("/user/checkout");
     onClose();
   };
 
@@ -42,9 +42,8 @@ export default function CartDrawer({ isOpen, onClose }) {
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
       ></div>
 
-      <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-350">
-          
+      <div className="absolute inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
+        <div className="w-screen sm:max-w-md bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-350">
           {/* Header */}
           <div className="p-6 border-b border-slate-200 shrink-0 flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -69,15 +68,18 @@ export default function CartDrawer({ isOpen, onClose }) {
                 <div>
                   <h4 className="font-bold text-slate-900">Basket is empty</h4>
                   <p className="text-xs text-slate-500 font-medium mt-1.5 max-w-[200px] mx-auto">
-                    Browse restaurants and add delicious meals to start ordering.
+                    Browse restaurants and add delicious meals to start
+                    ordering.
                   </p>
                 </div>
               </div>
             ) : (
               cart.map((cartItem, idx) => {
-                const extrasPrice = (cartItem.customizations?.extras?.length || 0) * 1.50;
-                const totalItemPrice = (cartItem.item.price + extrasPrice) * cartItem.quantity;
-                
+                const extrasPrice =
+                  (cartItem.customizations?.extras?.length || 0) * 1.5;
+                const totalItemPrice =
+                  (cartItem.item.price + extrasPrice) * cartItem.quantity;
+
                 return (
                   <div
                     key={`${cartItem.item._id}-${idx}`}
@@ -109,7 +111,8 @@ export default function CartDrawer({ isOpen, onClose }) {
                           <div className="text-[10px] text-slate-500 font-medium space-y-0.5 mt-1">
                             {cartItem.customizations.extras?.length > 0 && (
                               <p className="line-clamp-1">
-                                <strong>Extras:</strong> {cartItem.customizations.extras.join(', ')}
+                                <strong>Extras:</strong>{" "}
+                                {cartItem.customizations.extras.join(", ")}
                               </p>
                             )}
                             {cartItem.customizations.specialInstructions && (
@@ -125,7 +128,9 @@ export default function CartDrawer({ isOpen, onClose }) {
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-lg p-1">
                           <button
-                            onClick={() => updateCartQuantity(idx, cartItem.quantity - 1)}
+                            onClick={() =>
+                              updateCartQuantity(idx, cartItem.quantity - 1)
+                            }
                             className="p-0.5 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
                           >
                             <Lucide.Minus size={12} />
@@ -134,7 +139,9 @@ export default function CartDrawer({ isOpen, onClose }) {
                             {cartItem.quantity}
                           </span>
                           <button
-                            onClick={() => updateCartQuantity(idx, cartItem.quantity + 1)}
+                            onClick={() =>
+                              updateCartQuantity(idx, cartItem.quantity + 1)
+                            }
                             className="p-0.5 rounded text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors"
                           >
                             <Lucide.Plus size={12} />
@@ -161,19 +168,27 @@ export default function CartDrawer({ isOpen, onClose }) {
               <div className="space-y-2 text-xs text-slate-500 font-medium">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="text-slate-900 font-bold">${cartSubtotal.toFixed(2)}</span>
+                  <span className="text-slate-900 font-bold">
+                    ${cartSubtotal.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span className="text-slate-900 font-bold">${deliveryFee.toFixed(2)}</span>
+                  <span className="text-slate-900 font-bold">
+                    ${deliveryFee.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax (8%)</span>
-                  <span className="text-slate-900 font-bold">${tax.toFixed(2)}</span>
+                  <span className="text-slate-900 font-bold">
+                    ${tax.toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm pt-3 border-t border-slate-200 text-[#1A1A1A] font-black">
                   <span>Grand Total</span>
-                  <span className="text-brand-500 drop-shadow-sm">${total.toFixed(2)}</span>
+                  <span className="text-brand-500 drop-shadow-sm">
+                    ${total.toFixed(2)}
+                  </span>
                 </div>
               </div>
 
@@ -186,7 +201,6 @@ export default function CartDrawer({ isOpen, onClose }) {
               </button>
             </div>
           )}
-
         </div>
       </div>
     </div>

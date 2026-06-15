@@ -194,17 +194,14 @@ export default function AdminDashboard() {
       };
       let res;
       if (editingCategory) {
-        res = await fetch(
-          `${API_BASE_URL}/categories/${editingCategory._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(payload),
+        res = await fetch(`${API_BASE_URL}/categories/${editingCategory._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-        );
+          body: JSON.stringify(payload),
+        });
       } else {
         res = await fetch(`${API_BASE_URL}/categories`, {
           method: "POST",
@@ -299,17 +296,14 @@ export default function AdminDashboard() {
 
       let res;
       if (editingCoupon) {
-        res = await fetch(
-          `${API_BASE_URL}/coupons/${editingCoupon._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(payload),
+        res = await fetch(`${API_BASE_URL}/coupons/${editingCoupon._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-        );
+          body: JSON.stringify(payload),
+        });
       } else {
         res = await fetch(`${API_BASE_URL}/coupons`, {
           method: "POST",
