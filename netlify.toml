@@ -1,6 +1,7 @@
 [build]
-  command = "cd front-end && npm install && npm run build"
-  publish = "front-end/dist"
+  base = "front-end"
+  command = "npm install && npm run build"
+  publish = "dist"
   environment = { VITE_API_BASE_URL = "https://api.foodie.app/api" }
 
 [[redirects]]
