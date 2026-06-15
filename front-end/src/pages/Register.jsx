@@ -128,7 +128,16 @@ export default function Register() {
               >
                 Customer
               </button>
-
+              <button
+                type="button"
+                onClick={() => setRole('restaurant_owner')}
+                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${role === 'restaurant_owner'
+                    ? 'bg-brand-50 border-brand-500 text-brand-600'
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+              >
+                Owner
+              </button>
             </div>
           </div>
 
