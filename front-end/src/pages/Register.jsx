@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import * as Lucide from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import * as Lucide from "lucide-react";
+import { useApp } from "../context/AppContext";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 export default function Register() {
   const { register, user } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || "/";
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState('customer');
-  const [authError, setAuthError] = useState('');
+  const [role, setRole] = useState("customer");
+  const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
       let dest = from;
-      if (user.role === 'restaurant_owner') {
-        dest = '/owner/dashboard';
-      } else if (user.role === 'customer') {
-        dest = '/user/restaurants';
+      if (user.role === "restaurant_owner") {
+        dest = "/owner/dashboard";
+      } else if (user.role === "customer") {
+        dest = "/user/restaurants";
       }
 
       navigate(dest, { replace: true });
@@ -33,7 +33,7 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setAuthError('');
+    setAuthError("");
     setLoading(true);
 
     const res = await register(name, email, password, role);
@@ -47,11 +47,18 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-block font-black text-3xl tracking-tight text-[#1A1A1A] hover:text-brand-500 transition-colors mb-2">
+          <Link
+            to="/"
+            className="inline-block font-black text-3xl tracking-tight text-[#1A1A1A] hover:text-brand-500 transition-colors mb-2"
+          >
             Foodie
           </Link>
-          <h3 className="text-2xl font-black text-slate-900 mb-1.5">Create an Account</h3>
-          <p className="text-sm text-slate-500 font-medium">Join Foodie for express delivery</p>
+          <h3 className="text-2xl font-black text-slate-900 mb-1.5">
+            Create an Account
+          </h3>
+          <p className="text-sm text-slate-500 font-medium">
+            Join Foodie for express delivery
+          </p>
         </div>
 
         {authError && (
@@ -108,7 +115,11 @@ export default function Register() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
               >
-                {showPassword ? <Lucide.EyeOff size={18} /> : <Lucide.Eye size={18} />}
+                {showPassword ? (
+                  <Lucide.EyeOff size={18} />
+                ) : (
+                  <Lucide.Eye size={18} />
+                )}
               </button>
             </div>
           </div>
@@ -120,21 +131,23 @@ export default function Register() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setRole('customer')}
-                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${role === 'customer'
-                    ? 'bg-brand-50 border-brand-500 text-brand-600'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
+                onClick={() => setRole("customer")}
+                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${
+                  role === "customer"
+                    ? "bg-brand-50 border-brand-500 text-brand-600"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
               >
                 Customer
               </button>
               <button
                 type="button"
-                onClick={() => setRole('restaurant_owner')}
-                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${role === 'restaurant_owner'
-                    ? 'bg-brand-50 border-brand-500 text-brand-600'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
+                onClick={() => setRole("restaurant_owner")}
+                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${
+                  role === "restaurant_owner"
+                    ? "bg-brand-50 border-brand-500 text-brand-600"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
               >
                 Owner
               </button>
@@ -146,7 +159,7 @@ export default function Register() {
             disabled={loading}
             className="w-full py-3 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-lg hover:shadow-brand-500/25 transition-all disabled:opacity-50 mt-6"
           >
-            {loading ? 'Creating...' : 'Create Account'}
+            {loading ? "Creating..." : "Create Account"}
           </button>
         </form>
 
