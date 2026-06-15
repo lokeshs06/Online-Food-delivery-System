@@ -14,9 +14,8 @@ const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS?.split(",") || [
     "http://localhost:3000",
     "http://localhost:5173",
-    "https://foodie.app",
-    "https://www.foodie.app",
-    "https://ofds-frontend.netlify.app",
+    "https://tryfoodie.netlify.app",
+    
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: foodie-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: "cd back-end && npm install"
+    startCommand: "cd back-end && node server.js"
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb+srv://lokesh:lokihema@cluster0.73xn9l1.mongodb.net/ofds?retryWrites=true&w=majority&authSource=admin
+      - key: JWT_SECRET
+        value: supersecretjwtkeyforofdsapplication123456!
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: https://foodie.app,https://www.foodie.app,https://api.foodie.app
+    routes:
+      - path: /
+        matchType: prefix
+        dest: http://localhost:5000
