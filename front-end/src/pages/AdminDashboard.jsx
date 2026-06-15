@@ -964,9 +964,9 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-start">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 flex flex-col lg:flex-row items-start gap-4 lg:gap-0">
       {renderSidebar()}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 w-full min-w-0">
         {loading ? (
           <div className="flex justify-center items-center h-64 text-slate-400">
             <Lucide.Loader2 size={32} className="animate-spin" />
