@@ -21,9 +21,7 @@ export default function Register() {
   useEffect(() => {
     if (user) {
       let dest = from;
-      if (user.role === 'admin') {
-        dest = '/admin/dashboard';
-      } else if (user.role === 'restaurant_owner') {
+      if (user.role === 'restaurant_owner') {
         dest = '/owner/dashboard';
       } else if (user.role === 'customer') {
         dest = '/user/restaurants';
@@ -130,26 +128,7 @@ export default function Register() {
               >
                 Customer
               </button>
-              <button
-                type="button"
-                onClick={() => setRole('restaurant_owner')}
-                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${role === 'restaurant_owner'
-                    ? 'bg-brand-50 border-brand-500 text-brand-600'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-              >
-                Owner
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`py-2 px-3 border rounded-xl text-xs font-bold text-center transition-colors ${role === 'admin'
-                    ? 'bg-brand-50 border-brand-500 text-brand-600'
-                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-              >
-                Admin
-              </button>
+
             </div>
           </div>
 
