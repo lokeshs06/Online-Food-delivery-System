@@ -9,8 +9,19 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS?.split(",") || [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://ofds-frontend.netlify.app",
+  ],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Dev logging middleware
