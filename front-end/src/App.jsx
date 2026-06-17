@@ -8,6 +8,7 @@ import CustomerLayout from './layouts/CustomerLayout';
 import OwnerLayout from './layouts/OwnerLayout';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 import Home from './pages/Home';
 import CustomerRestaurants from './pages/CustomerRestaurants';
@@ -110,6 +111,7 @@ export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
+        <ScrollToTop />
         <AppRoutes />
       </BrowserRouter>
     </AppProvider>
