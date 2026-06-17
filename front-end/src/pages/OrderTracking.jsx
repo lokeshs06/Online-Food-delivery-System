@@ -8,7 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 export default function OrderTracking() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { trackingOrderId: contextTrackingId, API_BASE_URL, token, addNotification } = useApp();
+  const { trackingOrderId: contextTrackingId, API_BASE_URL, token, addNotification, globalSettings } = useApp();
   const orderId = id || contextTrackingId;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -181,13 +181,22 @@ export default function OrderTracking() {
             Order History
           </button>
           {['pending', 'accepted'].includes(order.status) && (
-            <button
-              onClick={handleCancelOrder}
-              disabled={cancelling}
-              className="px-4 py-2.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold hover:bg-rose-100 transition-colors disabled:opacity-50"
-            >
-              {cancelling ? 'Cancelling...' : 'Cancel Order'}
-            </button>
+            (() => {
+              const cancelWindow = globalSettings?.orderManagement?.cancelWindowMins || 10;
+              const minsSinceOrder = (new Date() - new Date(order.createdAt)) / 60000;
+              if (minsSinceOrder <= cancelWindow) {
+                return (
+                  <button
+                    onClick={handleCancelOrder}
+                    disabled={cancelling}
+                    className="px-4 py-2.5 rounded-full bg-rose-50 border border-rose-200 text-rose-600 text-xs font-bold hover:bg-rose-100 transition-colors disabled:opacity-50"
+                  >
+                    {cancelling ? 'Cancelling...' : 'Cancel Order'}
+                  </button>
+                );
+              }
+              return null;
+            })()
           )}
         </div>
       </div>
@@ -215,6 +224,30 @@ export default function OrderTracking() {
           <div className="flex justify-between items-center font-black text-sm text-[#1A1A1A] pt-1">
             <span>Total Paid</span>
             <span className="text-brand-500 font-mono">${order.totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="h-px bg-slate-200 my-4"></div>
+
+        {/* Order Details (Payment & Delivery) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="space-y-1">
+            <p className="font-bold text-slate-800">Payment Info</p>
+            <p className="text-slate-600 capitalize">
+              Method: <span className="font-medium">{order.paymentMethod.replace('_', ' ')}</span>
+            </p>
+            <p className="text-slate-600 capitalize">
+              Status: <span className={`font-bold ${order.paymentStatus === 'paid' ? 'text-emerald-500' : 'text-amber-500'}`}>{order.paymentStatus}</span>
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="font-bold text-slate-800">Delivery Address</p>
+            <p className="text-slate-600">{order.deliveryAddress?.fullName || 'Customer'}</p>
+            <p className="text-slate-500 line-clamp-2">
+              {order.deliveryAddress?.houseNumber && `${order.deliveryAddress.houseNumber}, `}
+              {order.deliveryAddress?.street && `${order.deliveryAddress.street}, `}
+              {order.deliveryAddress?.city}
+            </p>
           </div>
         </div>
       </div>

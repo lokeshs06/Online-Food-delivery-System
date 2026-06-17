@@ -184,7 +184,7 @@ const seedData = async () => {
         location: "304 Morning Dew St",
         hours: { open: "06:00 AM", close: "09:00 PM" },
         imageUrl:
-          "https://images.unsplash.com/photo-1610190179968-ebbbda043236?w=600&auto=format&fit=crop&q=80",
+          "https://lh3.googleusercontent.com/otMiwQuKSRI2yqb89HF3gMPW9e7QMUEHcdPh-qriqQUEHeqErOj52SrSXlwoOoj9AHkBHtySWJCesutaWvuM5C5XtUN0M4uLkoJY6SI",
         priceRange: "$",
         rating: 4.9,
         reviewsCount: 1,

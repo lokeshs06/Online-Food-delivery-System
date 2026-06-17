@@ -3,9 +3,10 @@ import * as Lucide from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import AdminOffersTab from "../components/AdminOffersTab";
+import AdminSettingsTab from "../components/AdminSettingsTab";
 
 export default function AdminDashboard() {
-  const { user, token, addNotification, API_BASE_URL } = useApp();
+  const { user, token, addNotification, API_BASE_URL, globalSettings } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
@@ -19,6 +20,7 @@ export default function AdminDashboard() {
     else if (path.includes("/admin/categories")) setActiveTab("categories");
     else if (path.includes("/admin/coupons")) setActiveTab("coupons");
     else if (path.includes("/admin/offers")) setActiveTab("offers");
+    else if (path.includes("/admin/settings")) setActiveTab("settings");
     else setActiveTab("overview");
   }, [location.pathname]);
 
@@ -380,99 +382,66 @@ export default function AdminDashboard() {
   };
 
   // Renderers
-  const renderSidebar = () => {
-    const tabs = [
-      { id: "overview", label: "Overview", icon: Lucide.LayoutDashboard },
-      { id: "restaurants", label: "Restaurants", icon: Lucide.Store },
-      { id: "users", label: "Users", icon: Lucide.Users },
-      { id: "orders", label: "Orders", icon: Lucide.ShoppingBag },
-      { id: "categories", label: "Categories", icon: Lucide.Tag },
-      { id: "coupons", label: "Coupons", icon: Lucide.Ticket },
-      { id: "offers", label: "Offers", icon: Lucide.Tags },
-    ];
 
-    return (
-      <div className="w-64 shrink-0 pr-8 hidden lg:block">
-        <div className="sticky top-28">
-          <div className="mb-6 px-3">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              Admin Panel
-            </h2>
-          </div>
-          <nav className="space-y-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                    isActive
-                      ? "bg-brand-50 text-brand-600"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon
-                    size={18}
-                    className={isActive ? "text-brand-500" : "text-slate-400"}
-                  />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-    );
-  };
 
   const renderOverview = () => {
     if (!analytics) return null;
+    
+    if (globalSettings?.dashboardPersonalization?.showAnalyticsCards === false) {
+      return (
+        <div className="space-y-6">
+          <h1 className="text-2xl font-bold text-slate-900">Platform Analytics</h1>
+          <div className="p-8 text-center text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl">
+            Analytics dashboard is hidden by settings.
+          </div>
+        </div>
+      );
+    }
+
     const cards = [
-      {
+      globalSettings?.dashboardPersonalization?.showRevenueStats !== false && {
         title: "Total Revenue",
         value: `$${analytics.totalRevenue.toFixed(2)}`,
         icon: Lucide.DollarSign,
         color: "text-emerald-500",
         bg: "bg-emerald-50",
       },
-      {
+      globalSettings?.dashboardPersonalization?.showRevenueStats !== false && {
         title: "Monthly Revenue",
         value: `$${analytics.monthlyRevenue.toFixed(2)}`,
         icon: Lucide.TrendingUp,
         color: "text-emerald-500",
         bg: "bg-emerald-50",
       },
-      {
+      globalSettings?.dashboardPersonalization?.showRecentOrders !== false && {
         title: "Total Orders",
         value: analytics.totalOrders,
         icon: Lucide.ShoppingBag,
         color: "text-blue-500",
         bg: "bg-blue-50",
       },
-      {
+      globalSettings?.dashboardPersonalization?.showRecentOrders !== false && {
         title: "Completed Orders",
         value: analytics.completedOrders,
         icon: Lucide.CheckCircle,
         color: "text-brand-500",
         bg: "bg-brand-50",
       },
-      {
+      globalSettings?.dashboardPersonalization?.showUserGrowth !== false && {
         title: "Total Customers",
         value: analytics.totalCustomers,
         icon: Lucide.Users,
         color: "text-indigo-500",
         bg: "bg-indigo-50",
       },
-      {
+      globalSettings?.dashboardPersonalization?.showRecentRestaurants !== false && {
         title: "Pending Approvals",
         value: analytics.pendingRestaurants,
         icon: Lucide.Store,
         color: "text-amber-500",
         bg: "bg-amber-50",
       },
-    ];
+    ].filter(Boolean);
 
     return (
       <div className="space-y-6">
@@ -965,7 +934,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8 flex flex-col lg:flex-row items-start gap-4 lg:gap-0">
-      {renderSidebar()}
       <div className="flex-1 w-full min-w-0">
         {loading ? (
           <div className="flex justify-center items-center h-64 text-slate-400">
@@ -980,6 +948,7 @@ export default function AdminDashboard() {
             {activeTab === "categories" && renderCategories()}
             {activeTab === "coupons" && renderCoupons()}
             {activeTab === "offers" && <AdminOffersTab />}
+            {activeTab === "settings" && <AdminSettingsTab />}
           </>
         )}
       </div>

@@ -5,7 +5,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import OwnerOffersTab from '../components/OwnerOffersTab';
 
 export default function OwnerDashboard() {
-  const { API_BASE_URL, token, user, addNotification } = useApp();
+  const { API_BASE_URL, token, user, addNotification, globalSettings } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState('orders');
@@ -153,12 +153,18 @@ export default function OwnerDashboard() {
           cuisine: restCuisine,
           location: restLocation,
           hours: { open: restHoursOpen, close: restHoursClose },
-          imageUrl: restImage || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80'
+          imageUrl: restImage || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80',
+          isApproved: globalSettings?.restaurantApproval?.autoApprove ? true : false
         })
       });
       const data = await res.json();
       if (data.success) {
-        addNotification('Restaurant profile created!', 'success');
+        addNotification(
+          globalSettings?.restaurantApproval?.autoApprove 
+            ? 'Restaurant profile created and auto-approved!' 
+            : 'Restaurant profile created! Pending admin approval.', 
+          'success'
+        );
         setIsCreatingRest(false);
         fetchDashboardData();
       } else {

@@ -245,11 +245,12 @@ export default function Profile() {
     let updatedAddresses = [...savedAddresses];
 
     // Handle Default logic
-    if (newAddress.isDefault) {
+    if (newAddress.isDefault || location.state?.fromCheckout) {
       updatedAddresses = updatedAddresses.map((a) => ({
         ...a,
         isDefault: false,
       }));
+      newAddress.isDefault = true;
     } else if (updatedAddresses.length === 0) {
       // If it's the first address, make it default automatically
       newAddress.isDefault = true;
@@ -280,6 +281,10 @@ export default function Profile() {
         setUser({ ...user, savedAddresses: data.savedAddresses });
         resetAddressForm();
         addNotification("Address saved successfully!", "success");
+        
+        if (location.state?.fromCheckout) {
+          navigate("/user/checkout", { replace: true });
+        }
       }
     } catch (err) {
       addNotification("Failed to save address", "error");

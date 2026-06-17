@@ -9,7 +9,8 @@ export default function RestaurantCard({ restaurant }) {
     setScrollToMenu,
     favorites,
     toggleFavorite,
-    user
+    user,
+    globalSettings
   } = useApp();
 
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ export default function RestaurantCard({ restaurant }) {
       </div>
 
       {/* Favorite Toggle Button */}
-      {user?.role === 'customer' && (
+      {user?.role === 'customer' && globalSettings?.customerSettings?.enableFavorites && (
         <button
           onClick={handleFavoriteClick}
           className="absolute top-20 right-6 p-2 rounded-full bg-white shadow-md hover:bg-slate-50 text-slate-400 hover:text-brand-500 transition-all duration-200 z-10"

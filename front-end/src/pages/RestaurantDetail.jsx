@@ -9,17 +9,17 @@ export default function RestaurantDetail() {
   const navigate = useNavigate();
 
   const {
-    user,
     API_BASE_URL,
-    selectedRestaurantId: contextSelectedId,
+    token,
     addToCart,
+    user,
     favorites,
     toggleFavorite,
     favoriteFoods,
     toggleFavoriteFood,
-    addNotification,
     scrollToMenu,
-    setScrollToMenu
+    setScrollToMenu,
+    globalSettings,
   } = useApp();
 
   const menuRef = useRef(null);
@@ -35,7 +35,7 @@ export default function RestaurantDetail() {
   // Active Category filter
   const [activeCategory, setActiveCategory] = useState('All');
 
-  const restaurantId = id || contextSelectedId;
+  const restaurantId = id || (typeof window !== 'undefined' ? localStorage.getItem('selectedRestaurantId') : null);
 
   // Load Restaurant detail
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function RestaurantDetail() {
 
   const handleOpenCustomize = (item) => {
     if (!user) {
-      addNotification('Please log in or create an account to continue.', 'error');
+      navigate('/login');
       return;
     }
     setSelectedItem(item);
@@ -176,9 +176,15 @@ export default function RestaurantDetail() {
           </div>
 
           {/* Favorite Action button */}
-          {user?.role === 'customer' && (
+          {(!user || user?.role === 'customer') && globalSettings?.customerSettings?.enableFavorites && (
             <button
-              onClick={() => toggleFavorite(restaurant._id)}
+              onClick={() => {
+                if (!user) {
+                  navigate('/login');
+                  return;
+                }
+                toggleFavorite(restaurant._id);
+              }}
               className="sm:shrink-0 flex items-center space-x-2 py-3 px-5 rounded-2xl bg-white/90 backdrop-blur-md border border-white hover:bg-white text-slate-800 transition-all font-bold text-xs shadow-lg active:scale-95"
             >
               <Lucide.Heart
@@ -263,10 +269,14 @@ export default function RestaurantDetail() {
                           <h4 className="font-black text-lg text-[#1A1A1A] leading-tight line-clamp-1 text-center sm:text-left">
                             {item.name}
                           </h4>
-                          {user?.role === 'customer' && (
+                          {(!user || user?.role === 'customer') && globalSettings?.customerSettings?.enableFavorites && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                if (!user) {
+                                  navigate('/login');
+                                  return;
+                                }
                                 toggleFavoriteFood(item._id);
                               }}
                               className="text-slate-300 hover:text-rose-500 transition-colors"

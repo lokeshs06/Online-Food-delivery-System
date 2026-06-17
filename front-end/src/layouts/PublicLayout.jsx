@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CartDrawer from '../components/CartDrawer';
+import Footer from '../components/Footer';
 import { useApp } from '../context/AppContext';
 
 export default function PublicLayout() {
@@ -22,9 +23,12 @@ export default function PublicLayout() {
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
       {/* Main Pages Mount point */}
-      <main className="flex-grow pb-16">
+      <main className="flex-grow pb-16 md:pb-0">
         <Outlet />
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

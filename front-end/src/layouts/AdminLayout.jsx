@@ -18,24 +18,34 @@ export default function AdminLayout() {
     { to: '/admin/users', label: 'Users', icon: Lucide.Users },
     { to: '/admin/restaurants', label: 'Restaurants', icon: Lucide.Store },
     { to: '/admin/orders', label: 'Orders', icon: Lucide.ShoppingBag },
-    { to: '/admin/offers', label: 'Offers', icon: Lucide.Tag },
-    { to: '/admin/analytics', label: 'Analytics', icon: Lucide.BarChart3 },
+    { to: '/admin/categories', label: 'Categories', icon: Lucide.Tag },
+    { to: '/admin/coupons', label: 'Coupons', icon: Lucide.Ticket },
+    { to: '/admin/offers', label: 'Offers', icon: Lucide.Tags },
     { to: '/admin/settings', label: 'Settings', icon: Lucide.Settings },
   ];
 
   return (
     <div className="flex min-h-screen bg-slate-50 relative overflow-hidden">
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="fixed top-4 left-4 z-40 md:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
-      >
-        {mobileMenuOpen ? (
-          <Lucide.X size={24} />
-        ) : (
+      {/* Mobile Top Bar */}
+      <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-20 flex items-center justify-between px-4 shadow-sm">
+        <div 
+          className="flex items-center cursor-pointer"
+          onClick={() => {
+            navigate('/admin/dashboard');
+            setMobileMenuOpen(false);
+          }}
+        >
+          <span className="font-black text-xl tracking-tight text-[#1A1A1A]">
+            Foodie <span className="text-brand-500 text-xs">Admin</span>
+          </span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="p-2 -mr-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-700"
+        >
           <Lucide.Menu size={24} />
-        )}
-      </button>
+        </button>
+      </div>
 
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
@@ -109,8 +119,8 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto w-full"}>
-        <div className="p-4 sm:p-6 md:p-8 pt-16 md:pt-4">
+      <main className="flex-1 overflow-y-auto w-full relative z-10">
+        <div className="p-4 sm:p-6 md:p-8 pt-20 md:pt-8">
           <Outlet />
         </div>
       </main>

@@ -7,7 +7,7 @@ export default function ProtectedRoute({ allowedRoles = [] }) {
   const location = useLocation();
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location, message: "Please log in or create an account to browse restaurants and place orders." }} replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {

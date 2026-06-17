@@ -3,6 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import * as Lucide from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import CartDrawer from '../components/CartDrawer';
+import Footer from '../components/Footer';
 
 export default function CustomerLayout() {
   const { user, logout, cartItemsCount, cartSubtotal } = useApp();
@@ -178,6 +179,8 @@ export default function CustomerLayout() {
       <main className="flex-grow">
         <Outlet />
       </main>
+
+     
 
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>

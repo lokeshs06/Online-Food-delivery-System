@@ -19,19 +19,22 @@ export default function Navbar({ onOpenCart }) {
 
   const handleNavClick = (sectionId, e) => {
     if (e) e.preventDefault();
-    const basePath = user && user.role === 'customer' ? '/user' : '';
-    if (sectionId === 'home') {
-      navigate(basePath + '/home');
+    if (sectionId === 'offers') {
+      navigate('/offers');
+    } else if (sectionId === 'restaurants') {
+      navigate('/restaurants');
+    } else if (sectionId === 'home') {
+      navigate('/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      if (location.pathname === basePath + '/home' || location.pathname === basePath + '/restaurants' || location.pathname === '/' || location.pathname === '/restaurants') {
+      if (location.pathname === '/') {
         const element = document.getElementById(sectionId);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
         }
       } else {
         setTargetSection(sectionId);
-        navigate(basePath + '/home');
+        navigate('/');
       }
     }
     setIsOpen(false);
@@ -66,9 +69,19 @@ export default function Navbar({ onOpenCart }) {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4 lg:space-x-8 absolute left-1/2 transform -translate-x-1/2">
               {(!user || user.role === 'customer') && (
+                <button onClick={(e) => handleNavClick('home', e)} className={`font-semibold text-sm transition-colors ${location.pathname === '/' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>Home</button>
+              )}
+              
+              {!user && (
                 <>
-                  <button onClick={(e) => handleNavClick('home', e)} className={`font-semibold text-sm transition-colors ${location.pathname === '/' || location.pathname === '/user/home' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>Home</button>
-                  <button onClick={(e) => handleNavClick('restaurants', e)} className={`font-semibold text-sm transition-colors ${location.pathname === '/user/restaurants' || location.pathname === '/restaurants' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>Restaurants</button>
+                  <Link to="/about" className={`font-semibold text-sm transition-colors ${location.pathname === '/about' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>About Us</Link>
+                  <Link to="/contact" className={`font-semibold text-sm transition-colors ${location.pathname === '/contact' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>Contact Us</Link>
+                </>
+              )}
+
+              {user && user.role === 'customer' && (
+                <>
+                  <button onClick={(e) => handleNavClick('restaurants', e)} className={`font-semibold text-sm transition-colors ${location.pathname === '/user/restaurants' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>Restaurants</button>
                   <button onClick={(e) => handleNavClick('offers', e)} className={`font-semibold text-sm transition-colors ${location.pathname === '/user/offers' ? 'text-[#1A1A1A]' : 'text-slate-500 hover:text-brand-500'}`}>Offers</button>
                 </>
               )}
@@ -86,14 +99,14 @@ export default function Navbar({ onOpenCart }) {
             {/* Right Action buttons */}
             <div className="hidden md:flex items-center space-x-4">
               {/* Search Icon */}
-              {(!user || user.role === 'customer') && (
+              {(user && user.role === 'customer') && (
                 <button onClick={() => { /* Navigate to search or open search modal */ }} className="p-2 text-slate-600 hover:text-brand-500 transition-colors">
                   <Lucide.Search size={20} />
                 </button>
               )}
 
               {/* Cart Trigger */}
-              {(!user || (user.role !== 'restaurant_owner' && user.role !== 'admin')) && (
+              {(user && user.role === 'customer') && (
                 <button
                   onClick={onOpenCart}
                   className="relative w-10 h-10 flex items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200 ml-2"
@@ -207,7 +220,7 @@ export default function Navbar({ onOpenCart }) {
 
             {/* Mobile menu button */}
             <div className="flex md:hidden items-center space-x-2">
-              {(!user || (user.role !== 'restaurant_owner' && user.role !== 'admin')) && (
+              {(user && user.role === 'customer') && (
                 <button
                   onClick={onOpenCart}
                   className="relative p-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-700"
@@ -235,10 +248,24 @@ export default function Navbar({ onOpenCart }) {
         {isOpen && (
           <div className="md:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-4 space-y-2 shadow-md">
             {(!user || user.role === 'customer') && (
+              <button onClick={(e) => handleNavClick('home', e)} className="w-full flex items-center space-x-2 p-2.5 rounded-xl text-slate-700 hover:bg-slate-50">
+                <Lucide.Home size={18} /><span>Home</span>
+              </button>
+            )}
+            
+            {!user && (
               <>
-                <button onClick={(e) => handleNavClick('home', e)} className="w-full flex items-center space-x-2 p-2.5 rounded-xl text-slate-700 hover:bg-slate-50">
-                  <Lucide.Home size={18} /><span>Home</span>
+                <button onClick={() => { navigate('/about'); setIsOpen(false); }} className="w-full flex items-center space-x-2 p-2.5 rounded-xl text-slate-700 hover:bg-slate-50">
+                  <Lucide.Info size={18} /><span>About Us</span>
                 </button>
+                <button onClick={() => { navigate('/contact'); setIsOpen(false); }} className="w-full flex items-center space-x-2 p-2.5 rounded-xl text-slate-700 hover:bg-slate-50">
+                  <Lucide.Phone size={18} /><span>Contact Us</span>
+                </button>
+              </>
+            )}
+
+            {user && user.role === 'customer' && (
+              <>
                 <button onClick={(e) => handleNavClick('restaurants', e)} className="w-full flex items-center space-x-2 p-2.5 rounded-xl text-slate-700 hover:bg-slate-50">
                   <Lucide.Utensils size={18} /><span>Restaurants</span>
                 </button>

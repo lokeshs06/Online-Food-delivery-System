@@ -5,7 +5,83 @@ const AppContext = createContext();
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
+const defaultSettings = {
+  general: {
+    platformName: "OFDS Platform",
+    platformDescription: "Premium Online Food Delivery System",
+    supportEmail: "support@ofds.com",
+    supportPhone: "+1 800 123 4567",
+    businessAddress: "123 Food Street, Tech City, TC 10001",
+    defaultCurrency: "USD",
+    timeZone: "UTC",
+  },
+  appearance: { theme: "light", sidebarCollapse: false, accentColor: "#F54748" },
+  notifications: {
+    emailPreferences: true,
+    newRegistration: true,
+    newRestaurant: true,
+    newOrder: true,
+    newOffer: false,
+    complaintAlerts: true,
+  },
+  restaurantApproval: {
+    autoApprove: false,
+    manualRequired: true,
+    verificationRules: "Standard KYC Verification",
+  },
+  offerManagement: {
+    requireApproval: true,
+    autoExpire: true,
+    maxDiscount: 50,
+    featuredLimit: 5,
+  },
+  orderManagement: {
+    cancelWindowMins: 10,
+    autoCancelUnpaid: true,
+    refundPolicy: "Full refund if cancelled within 10 minutes.",
+    minimumOrderValue: 10,
+  },
+  customerSettings: {
+    allowRegistration: true,
+    requireVerification: false,
+    enableFavorites: true,
+    allowAccountDeletion: false,
+  },
+  dashboardPersonalization: {
+    showAnalyticsCards: true,
+    showRevenueStats: true,
+    showRecentOrders: true,
+    showRecentRestaurants: true,
+    showActiveOffers: true,
+    showUserGrowth: true,
+  },
+  maintenance: {
+    maintenanceMode: false,
+  },
+};
+
 export const AppProvider = ({ children }) => {
+  // Global Settings State
+  const [globalSettings, setGlobalSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ofds_admin_settings");
+      if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
+    } catch (e) {
+      console.error("Failed to parse settings", e);
+    }
+    return defaultSettings;
+  });
+
+  // Sync settings to localStorage and handle theme
+  useEffect(() => {
+    localStorage.setItem("ofds_admin_settings", JSON.stringify(globalSettings));
+    if (globalSettings.appearance?.theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [globalSettings]);
+
   // Navigation
   const [targetSection, setTargetSection] = useState(null); // For anchor scrolling on Home
   const [profileActiveTab, setProfileActiveTab] = useState("orders"); // orders, profile, password, addresses, favorites
@@ -73,6 +149,12 @@ export const AppProvider = ({ children }) => {
 
   // Notification Toast Helper
   const addNotification = (message, type = "info") => {
+    // Check global notification settings before showing certain toasts
+    if (globalSettings.notifications) {
+      const msgLower = message.toLowerCase();
+      if (!globalSettings.notifications.newOrder && msgLower.includes("order")) return;
+      if (!globalSettings.notifications.newRegistration && (msgLower.includes("welcome") || msgLower.includes("account created"))) return;
+    }
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -279,6 +361,9 @@ export const AppProvider = ({ children }) => {
         favorites,
         favoriteFoods,
         notifications,
+        globalSettings,
+        setGlobalSettings,
+        defaultSettings,
         login,
         register,
         logout,

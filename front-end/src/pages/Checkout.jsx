@@ -14,6 +14,7 @@ export default function Checkout() {
     setTrackingOrderId,
     setProfileActiveTab,
     addNotification,
+    globalSettings,
   } = useApp();
 
   const navigate = useNavigate();
@@ -164,10 +165,15 @@ export default function Checkout() {
         return;
       }
 
+      // Simulate Gateway Payment Processing Delay
+      if (paymentMethodType === "card") {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
       // 2. If using a new card and "Save Card" is checked, save card first
       if (paymentMethodType === "card" && !useSavedCard && saveCard) {
         const cardType = cardNumber.startsWith("4") ? "Visa" : "Mastercard";
-        await fetch(`${API_BASE_URL}/auth/payments`, {
+        const cardRes = await fetch(`${API_BASE_URL}/auth/payments`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -180,6 +186,12 @@ export default function Checkout() {
             cardType,
           }),
         });
+        const cardData = await cardRes.json();
+        if (!cardData.success) {
+          addNotification("Failed to save credit card.", "error");
+          setSubmitting(false);
+          return;
+        }
       }
 
       // Submit order to backend
@@ -215,14 +227,13 @@ export default function Checkout() {
         addNotification("Order placed and paid successfully!", "success");
         clearCart();
         setTrackingOrderId(data.data._id);
-        setCartItems([]);
         navigate(`/user/orders/${data.data._id}`);
       } else {
         addNotification(data.error || "Failed to place order", "error");
       }
     } catch (err) {
       console.error(err);
-      addNotification("Connection failed. Try again.", "error");
+      addNotification("Payment processing failed. Try again.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -293,7 +304,7 @@ export default function Checkout() {
                   <button
                     type="button"
                     onClick={() => {
-                      navigate("/user/profile/addresses");
+                      navigate("/user/addresses", { state: { fromCheckout: true } });
                     }}
                     className="flex flex-col items-center justify-center space-y-1.5 p-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-slate-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600 transition-all min-h-[90px]"
                   >
@@ -314,8 +325,7 @@ export default function Checkout() {
                 <button
                   type="button"
                   onClick={() => {
-                    setProfileActiveTab("addresses");
-                    navigate("/profile/addresses");
+                    navigate("/user/addresses", { state: { fromCheckout: true } });
                   }}
                   className="inline-flex items-center space-x-1.5 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
                 >
@@ -709,10 +719,20 @@ export default function Checkout() {
             </div>
           </div>
 
+          {/* Minimum Order Value Warning */}
+          {cartSubtotal < (globalSettings?.orderManagement?.minimumOrderValue || 0) && (
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl text-xs font-semibold flex items-start space-x-2">
+              <Lucide.AlertTriangle size={16} className="shrink-0 mt-0.5" />
+              <span>
+                Minimum order value is ${(globalSettings?.orderManagement?.minimumOrderValue || 0).toFixed(2)}. Add ${(globalSettings?.orderManagement?.minimumOrderValue - cartSubtotal).toFixed(2)} more to place order.
+              </span>
+            </div>
+          )}
+
           {/* Place Order button */}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || cartSubtotal < (globalSettings?.orderManagement?.minimumOrderValue || 0)}
             className="w-full py-4 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-lg shadow-brand-500/30 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
           >
             {submitting ? (

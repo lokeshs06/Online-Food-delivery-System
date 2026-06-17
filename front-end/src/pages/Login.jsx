@@ -7,7 +7,8 @@ export default function Login() {
   const { login, user } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname;
+  const redirectMessage = location.state?.message;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +28,7 @@ export default function Login() {
         dest = '/user/restaurants';
       }
 
-      navigate(from === '/' ? dest : from, { replace: true });
+      navigate(from && from !== '/' ? from : dest, { replace: true });
     }
   }, [user, navigate, from]);
 
@@ -44,81 +45,90 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-block font-black text-3xl tracking-tight text-[#1A1A1A] hover:text-brand-500 transition-colors mb-2">
-            Foodie
-          </Link>
-          <h3 className="text-2xl font-black text-slate-900 mb-1.5">Welcome Back</h3>
-          <p className="text-sm text-slate-500 font-medium">Login to order your favorite meals</p>
-        </div>
-
-        {authError && (
-          <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold flex items-center space-x-2">
-            <Lucide.AlertTriangle size={16} className="shrink-0" />
-            <span>{authError}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="john@example.com"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-medium placeholder:text-slate-400"
-            />
+    <div className="flex flex-col min-h-screen">
+      <main className="flex-grow flex items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-block font-black text-3xl tracking-tight text-[#1A1A1A] hover:text-brand-500 transition-colors mb-2">
+              Foodie
+            </Link>
+            <h3 className="text-2xl font-black text-slate-900 mb-1.5">Welcome Back</h3>
+            <p className="text-sm text-slate-500 font-medium">Login to order your favorite meals</p>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                Password
+          {authError && (
+            <div className="mb-6 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs font-semibold flex items-center space-x-2">
+              <Lucide.AlertTriangle size={16} className="shrink-0" />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          {redirectMessage && !authError && (
+            <div className="mb-6 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold flex items-center space-x-2">
+              <Lucide.Info size={16} className="shrink-0" />
+              <span>{redirectMessage}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Email Address
               </label>
-            </div>
-            <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type="email"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all pr-12 font-medium placeholder:text-slate-400"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="john@example.com"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all font-medium placeholder:text-slate-400"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
-              >
-                {showPassword ? <Lucide.EyeOff size={18} /> : <Lucide.Eye size={18} />}
-              </button>
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  Password
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all pr-12 font-medium placeholder:text-slate-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1"
+                >
+                  {showPassword ? <Lucide.EyeOff size={18} /> : <Lucide.Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-lg hover:shadow-brand-500/25 transition-all disabled:opacity-50 mt-6"
+            >
+              {loading ? 'Signing In...' : 'Sign In'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <Link
+              to="/register"
+              className="text-sm font-semibold text-slate-500 hover:text-brand-500 transition-colors"
+            >
+              Don't have an account? Sign Up
+            </Link>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm shadow-lg hover:shadow-brand-500/25 transition-all disabled:opacity-50 mt-6"
-          >
-            {loading ? 'Signing In...' : 'Sign In'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link
-            to="/register"
-            className="text-sm font-semibold text-slate-500 hover:text-brand-500 transition-colors"
-          >
-            Don't have an account? Sign Up
-          </Link>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

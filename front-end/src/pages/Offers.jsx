@@ -57,7 +57,7 @@ export default function Offers() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {offers.map(offer => (
-            <div key={offer._id} className="group relative bg-white border border-slate-200 hover:border-brand-500 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-300 flex flex-col cursor-pointer" onClick={() => navigate(`/user/restaurants/${offer.restaurant._id}`)}>
+            <div key={offer._id} className="group relative bg-white border border-slate-200 hover:border-brand-500 rounded-3xl overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-300 flex flex-col cursor-pointer" onClick={() => navigate(token ? `/user/restaurants/${offer.restaurant._id}` : `/restaurants/${offer.restaurant._id}`)}>
               {/* Top Banner */}
               <div className="h-32 relative overflow-hidden bg-slate-100">
                 <img 
@@ -86,6 +86,10 @@ export default function Offers() {
                   <div className="flex items-center space-x-1.5 text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1.5 rounded-lg">
                     <Lucide.Clock size={12} className="text-brand-500" />
                     <span>Valid till {new Date(offer.endDate).toLocaleDateString()}</span>
+                  </div>
+                  
+                  <div className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg ${offer.restaurant.isAcceptingOrders !== false ? 'text-green-600 bg-green-50' : 'text-rose-600 bg-rose-50'}`}>
+                    {offer.restaurant.isAcceptingOrders !== false ? 'Accepting Orders' : 'Not Accepting Orders'}
                   </div>
                   
                   <button className="flex items-center space-x-1 text-xs font-bold text-brand-600 group-hover:text-brand-500 transition-colors">
