@@ -85,18 +85,29 @@ export default function AdminSettingsTab() {
     e.preventDefault();
     setConfigSaving(true);
     
-    // Simulate API delay for realism
-    await new Promise((r) => setTimeout(r, 800));
-
-    const updatedSettings = {
-      ...globalSettings,
-      [activeSection]: currentConfig,
-    };
-
-    setGlobalSettings(updatedSettings);
-    
-    setConfigSaving(false);
-    addNotification("Settings saved successfully", "success");
+    try {
+      const updatedSection = { [activeSection]: currentConfig };
+      const res = await fetch(`${API_BASE_URL}/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedSection)
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setGlobalSettings(data.data);
+        addNotification("Settings saved successfully", "success");
+      } else {
+        addNotification(data.error || "Failed to save settings", "error");
+      }
+    } catch (err) {
+      addNotification("Connection failed", "error");
+    } finally {
+      setConfigSaving(false);
+    }
   };
 
   const handleSaveAccount = async (e) => {
@@ -152,7 +163,7 @@ export default function AdminSettingsTab() {
     }
   };
 
-  const handleSystemAction = (actionName) => {
+  const handleSystemAction = async (actionName) => {
     if (actionName === "Toggle Maintenance Mode") {
       const isCurrentlyMaintenance = globalSettings.maintenance?.maintenanceMode;
       const newStatus = !isCurrentlyMaintenance;
@@ -161,19 +172,125 @@ export default function AdminSettingsTab() {
         : "Are you sure you want to DISABLE Maintenance Mode?";
       
       if (window.confirm(confirmMsg)) {
-        setGlobalSettings(prev => ({
-          ...prev,
-          maintenance: { ...prev.maintenance, maintenanceMode: newStatus }
-        }));
-        addNotification(`Maintenance Mode ${newStatus ? 'enabled' : 'disabled'}.`, "success");
+        try {
+          const res = await fetch(`${API_BASE_URL}/settings`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ maintenance: { ...globalSettings.maintenance, maintenanceMode: newStatus } })
+          });
+          const data = await res.json();
+          if (data.success) {
+            setGlobalSettings(data.data);
+            addNotification(`Maintenance Mode ${newStatus ? 'enabled' : 'disabled'}.`, "success");
+          } else {
+            addNotification(data.error || "Failed to toggle maintenance mode", "error");
+          }
+        } catch (err) {
+          addNotification("Connection failed", "error");
+        }
       }
       return;
     }
 
     if (actionName === "Reset To Default Settings") {
       if (window.confirm("Are you sure you want to reset ALL settings to their defaults? This cannot be undone.")) {
-        setGlobalSettings(defaultSettings);
-        addNotification("Settings reset to defaults.", "success");
+        try {
+          const res = await fetch(`${API_BASE_URL}/settings`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(defaultSettings)
+          });
+          const data = await res.json();
+          if (data.success) {
+            setGlobalSettings(data.data);
+            addNotification("Settings reset to defaults.", "success");
+          } else {
+            addNotification(data.error || "Failed to reset settings", "error");
+          }
+        } catch (err) {
+          addNotification("Connection failed", "error");
+        }
+      }
+      return;
+    }
+
+    if (actionName === "Export Database Backup") {
+      try {
+        addNotification("Generating backup... Please wait.", "info");
+        const res = await fetch(`${API_BASE_URL}/admin/system/backup`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error('Failed to generate backup');
+        
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const contentDisposition = res.headers.get('content-disposition');
+        let filename = 'ofds-backup.json';
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename=(.+)/);
+          if (filenameMatch && filenameMatch.length === 2) {
+            filename = filenameMatch[1];
+          }
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        addNotification("Database backup downloaded successfully.", "success");
+      } catch (err) {
+        addNotification("Failed to export backup.", "error");
+      }
+      return;
+    }
+
+    if (actionName === "Clear System Cache") {
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/system/clear-cache`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          addNotification(data.message, "success");
+        } else {
+          addNotification(data.error, "error");
+        }
+      } catch (err) {
+        addNotification("Failed to clear system cache.", "error");
+      }
+      return;
+    }
+
+    if (actionName === "Seed Demo Data") {
+      const confirmInput = window.prompt("WARNING: This will permanently DELETE all existing data. Type 'RESET DATABASE' to proceed.");
+      if (confirmInput !== "RESET DATABASE") {
+        if (confirmInput !== null) addNotification("Operation cancelled. Incorrect confirmation phrase.", "info");
+        return;
+      }
+
+      addNotification("Seeding database... This might take a moment.", "info");
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/system/seed`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          addNotification(data.message, "success");
+        } else {
+          addNotification(data.error || "Action forbidden.", "error");
+        }
+      } catch (err) {
+        addNotification("Failed to seed database.", "error");
       }
       return;
     }

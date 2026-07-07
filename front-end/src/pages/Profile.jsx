@@ -362,6 +362,12 @@ export default function Profile() {
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <div className="flex flex-col items-end mr-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+            <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+              <Lucide.Wallet size={10} /> Wallet
+            </span>
+            <span className="text-sm font-black text-emerald-700">${(user?.walletBalance || 0).toFixed(2)}</span>
+          </div>
           <div className="w-12 h-12 rounded-2xl bg-brand-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/15">
             {user?.name?.charAt(0).toUpperCase()}
           </div>

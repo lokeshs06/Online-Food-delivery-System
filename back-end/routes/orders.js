@@ -6,13 +6,14 @@ const MenuItem = require('../models/MenuItem');
 const User = require('../models/User');
 const Coupon = require('../models/Coupon');
 const { protect, authorize } = require('../middleware/auth');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder');
 
 // @desc    Place a new order
 // @route   POST /api/orders
 // @access  Private
 router.post('/', protect, async (req, res) => {
   try {
-    const { restaurant: restaurantId, items, paymentMethod, deliveryType, scheduledTime, coupon, deliveryAddress } = req.body;
+    const { restaurant: restaurantId, items, paymentMethod, paymentIntentId, deliveryType, scheduledTime, coupon, deliveryAddress, useWallet } = req.body;
 
     if (!deliveryAddress) {
       return res.status(400).json({ success: false, error: 'Please provide a delivery address' });
@@ -89,6 +90,58 @@ router.post('/', protect, async (req, res) => {
 
     const grandTotal = Math.round((totalAmount + deliveryFee + tax - discountAmount) * 100) / 100;
 
+    let payableAmount = grandTotal;
+    let walletAmountUsed = 0;
+    const customerUser = await User.findById(req.user.id);
+    let walletBalance = customerUser.walletBalance || 0;
+
+    if (useWallet) {
+      if (walletBalance >= grandTotal) {
+        walletAmountUsed = grandTotal;
+        payableAmount = 0;
+      } else {
+        walletAmountUsed = walletBalance;
+        payableAmount = Math.round((grandTotal - walletBalance) * 100) / 100;
+        walletAmountUsed = walletBalance;
+        
+        // Stripe minimum charge is 0.50
+        if (payableAmount > 0 && payableAmount < 0.50) {
+          payableAmount = 0.50;
+          walletAmountUsed = Math.max(0, grandTotal - 0.50);
+        }
+      }
+    } else if (payableAmount > 0 && payableAmount < 0.50) {
+      payableAmount = 0.50;
+    }
+
+    // Verify Stripe payment intent if paying by card (and if a card payment was actually required)
+    if ((paymentMethod === 'card' || !paymentMethod) && paymentIntentId && payableAmount > 0) {
+      try {
+        // Prevent duplicate orders with the same payment intent
+        const existingOrder = await Order.findOne({ paymentIntentId });
+        if (existingOrder) {
+          return res.status(400).json({ success: false, error: 'Order for this payment already exists' });
+        }
+
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (paymentIntent.status !== 'succeeded') {
+          return res.status(400).json({ success: false, error: 'Payment has not succeeded' });
+        }
+        if (paymentIntent.amount !== Math.round(payableAmount * 100)) {
+          return res.status(400).json({ success: false, error: 'Payment amount mismatch' });
+        }
+      } catch (err) {
+        return res.status(400).json({ success: false, error: 'Invalid PaymentIntent' });
+      }
+    } else if ((paymentMethod === 'card' || !paymentMethod) && !paymentIntentId && payableAmount > 0) {
+      return res.status(400).json({ success: false, error: 'Payment intent ID is required for card payments' });
+    }
+
+    let finalPaymentMethod = paymentMethod || 'card';
+    if (useWallet && payableAmount === 0) {
+      finalPaymentMethod = 'wallet';
+    }
+
     // Create Order
     const order = await Order.create({
       customer: req.user.id,
@@ -97,8 +150,10 @@ router.post('/', protect, async (req, res) => {
       totalAmount: grandTotal,
       couponCode: appliedCoupon ? appliedCoupon.code : undefined,
       discountAmount: discountAmount,
-      paymentMethod: paymentMethod || 'card',
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid', // Simulate successful payment for card
+      walletAmountUsed: walletAmountUsed,
+      paymentMethod: finalPaymentMethod,
+      paymentIntentId: paymentIntentId,
+      paymentStatus: finalPaymentMethod === 'cod' ? 'pending' : 'paid', // For card/wallet, payment is secured
       deliveryType: deliveryType || 'immediate',
       scheduledTime: deliveryType === 'scheduled' ? new Date(scheduledTime) : undefined,
       deliveryAddress: {
@@ -122,6 +177,12 @@ router.post('/', protect, async (req, res) => {
     if (appliedCoupon) {
       appliedCoupon.timesUsed += 1;
       await appliedCoupon.save();
+    }
+
+    // Deduct wallet balance
+    if (walletAmountUsed > 0) {
+      customerUser.walletBalance -= walletAmountUsed;
+      await customerUser.save();
     }
 
     res.status(201).json({ success: true, data: order });
@@ -228,6 +289,13 @@ router.put('/:id/status', protect, authorize('restaurant_owner', 'admin'), async
     if (status === 'delivered') {
       order.paymentStatus = 'paid';
       order.deliveredAt = Date.now();
+    } else if (status === 'cancelled' && order.paymentStatus === 'paid') {
+      const customer = await User.findById(order.customer);
+      if (customer) {
+        customer.walletBalance = (customer.walletBalance || 0) + order.totalAmount;
+        await customer.save();
+        order.paymentStatus = 'refunded_to_wallet';
+      }
     }
     await order.save();
 
@@ -262,6 +330,16 @@ router.put('/:id/cancel', protect, async (req, res) => {
     }
 
     order.status = 'cancelled';
+    
+    if (order.paymentStatus === 'paid') {
+      const customer = await User.findById(order.customer);
+      if (customer) {
+        customer.walletBalance = (customer.walletBalance || 0) + order.totalAmount;
+        await customer.save();
+        order.paymentStatus = 'refunded_to_wallet';
+      }
+    }
+    
     await order.save();
 
     res.status(200).json({ success: true, data: order });

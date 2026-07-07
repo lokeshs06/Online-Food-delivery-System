@@ -40,6 +40,50 @@ const adminRoutes = require("./routes/admin");
 const categoryRoutes = require("./routes/categories");
 const couponRoutes = require("./routes/coupons");
 const offerRoutes = require("./routes/offers");
+const stripeRoutes = require("./routes/stripe");
+const settingsRoutes = require("./routes/settings");
+
+// Global Maintenance Mode Middleware
+app.use(async (req, res, next) => {
+  // Always allow auth endpoints (login) and GET settings (for maintenance status)
+  if (req.path.startsWith('/api/auth') || (req.path === '/api/settings' && req.method === 'GET')) {
+    return next();
+  }
+  
+  try {
+    const getGlobalSettings = settingsRoutes.getGlobalSettings;
+    if (getGlobalSettings) {
+      const globalSettings = await getGlobalSettings();
+      if (globalSettings?.maintenance?.maintenanceMode) {
+        // Attempt to check if the user is an admin
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer')) {
+          const token = authHeader.split(' ')[1];
+          try {
+            const jwt = require('jsonwebtoken');
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const User = require('./models/User');
+            const user = await User.findById(decoded.id);
+            if (user && user.role === 'admin') {
+              return next(); // Admins bypass maintenance mode
+            }
+          } catch (e) {
+            // Invalid token or user not found, fall through to block
+          }
+        }
+        // Block all non-admin requests
+        return res.status(503).json({ 
+          success: false, 
+          error: 'System is currently under maintenance. Please try again later.',
+          maintenance: true 
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Maintenance mode check failed:', err);
+  }
+  next();
+});
 
 // Mount routes
 app.use("/api/auth", authRoutes);
@@ -51,6 +95,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/offers", offerRoutes);
+app.use("/api/stripe", stripeRoutes);
+app.use("/api/settings", settingsRoutes);
 
 // Base route
 app.get("/", (req, res) => {

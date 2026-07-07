@@ -25,6 +25,22 @@ npm install
 npm run dev
 ```
 
+## Demo Credentials
+
+You can use the following credentials to test the application if you have seeded the database (`node back-end/seeds/seeder.js`):
+
+**Admin**
+- Email: `admin@gmail.com`
+- Password: `password123`
+
+**Restaurant Owner**
+- Email: `owner1@gmail.com` (or `owner2@gmail.com`, `owner3@gmail.com`)
+- Password: `password123`
+
+**Customer**
+- Email: `customer1@gmail.com` (up to `customer5@gmail.com`)
+- Password: `password123`
+
 ## Environment variables
 
 ### Backend

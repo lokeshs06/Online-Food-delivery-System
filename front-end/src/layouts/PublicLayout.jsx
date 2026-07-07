@@ -28,7 +28,7 @@ export default function PublicLayout() {
       </main>
 
       {/* Footer */}
-      <Footer />
+     <Footer />
     </div>
   );
 }

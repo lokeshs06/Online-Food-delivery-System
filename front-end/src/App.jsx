@@ -36,6 +36,28 @@ function AppRoutes() {
   const isAdmin = user?.role === "admin";
   const isLoginRoute = location.pathname === "/login";
 
+  // Poll settings if stuck in maintenance mode to auto-recover
+  useEffect(() => {
+    let interval;
+    if (isMaintenance && !isAdmin) {
+      interval = setInterval(async () => {
+        try {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+          const res = await fetch(`${API_BASE_URL}/settings`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.data && !data.data.maintenance?.maintenanceMode) {
+              window.location.reload(); // Maintenance is over, reload to restore normal operation
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }, 10000); // Poll every 10s
+    }
+    return () => clearInterval(interval);
+  }, [isMaintenance, isAdmin]);
+
   if (isMaintenance && !isAdmin && !isLoginRoute) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 text-center">

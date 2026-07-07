@@ -3,7 +3,14 @@ const router = express.Router();
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const Order = require('../models/Order');
+const MenuItem = require('../models/MenuItem');
+const Review = require('../models/Review');
+const Offer = require('../models/Offer');
+const Coupon = require('../models/Coupon');
+const Category = require('../models/Category');
 const { protect, authorize } = require('../middleware/auth');
+const { exec } = require('child_process');
+const path = require('path');
 
 router.use(protect);
 router.use(authorize('admin'));
@@ -165,6 +172,81 @@ router.get('/orders', async (req, res) => {
     res.json({ success: true, count: orders.length, data: orders });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Server Error' });
+  }
+});
+
+// @route   GET /api/admin/system/backup
+// @desc    Export a JSON backup of all database collections
+// @access  Private/Admin
+router.get('/system/backup', async (req, res) => {
+  try {
+    console.log(`[AUDIT LOG] ${new Date().toISOString()} - Admin user ${req.user.id} requested: Database Backup`);
+    
+    const [
+      users, restaurants, orders, menuItems, reviews, offers, coupons, categories
+    ] = await Promise.all([
+      User.find(), Restaurant.find(), Order.find(), MenuItem.find(),
+      Review.find(), Offer.find(), Coupon.find(), Category.find()
+    ]);
+
+    const backupData = {
+      timestamp: new Date().toISOString(),
+      data: { users, restaurants, orders, menuItems, reviews, offers, coupons, categories }
+    };
+
+    const filename = `ofds-backup-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-type', 'application/json');
+    res.send(JSON.stringify(backupData, null, 2));
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to generate backup' });
+  }
+});
+
+// @route   POST /api/admin/system/clear-cache
+// @desc    Clear system cache (Placeholder for Redis)
+// @access  Private/Admin
+router.post('/system/clear-cache', async (req, res) => {
+  try {
+    console.log(`[AUDIT LOG] ${new Date().toISOString()} - Admin user ${req.user.id} requested: Clear System Cache`);
+    
+    // Future integration point for Redis or memory caching.
+    // e.g. await redisClient.flushall();
+
+    res.json({ success: true, message: 'System cache cleared successfully (placeholder)' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to clear cache' });
+  }
+});
+
+// @route   POST /api/admin/system/seed
+// @desc    Wipe database and seed demo data (Dev/Test ONLY)
+// @access  Private/Admin
+router.post('/system/seed', async (req, res) => {
+  try {
+    console.log(`[AUDIT LOG] ${new Date().toISOString()} - Admin user ${req.user.id} requested: Seed Demo Data`);
+    
+    if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+      console.warn(`[AUDIT LOG] Action BLOCKED: Attempted to seed demo data in production environment.`);
+      return res.status(403).json({ success: false, error: 'Action forbidden in production environment' });
+    }
+
+    const seederPath = path.join(__dirname, '..', 'seeds', 'seeder.js');
+    
+    exec(`node ${seederPath}`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Seed execution error: ${error}`);
+        return res.status(500).json({ success: false, error: 'Failed to execute seed script' });
+      }
+      
+      console.log(`Seed script output: ${stdout}`);
+      if (stderr) console.error(`Seed script stderr: ${stderr}`);
+
+      res.json({ success: true, message: 'Database reset and seeded with demo data successfully' });
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'Failed to seed database' });
   }
 });
 

@@ -30,7 +30,7 @@ export default function OwnerLayout() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-50 relative overflow-hidden">
+    <div className="flex h-[100dvh] bg-slate-50 relative overflow-hidden">
       {/* Mobile Menu Button */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -49,13 +49,13 @@ export default function OwnerLayout() {
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed md:relative w-64 h-screen md:h-auto bg-white border-r border-slate-200 shadow-sm flex flex-col shrink-0 overflow-y-auto transition-transform z-40 ${
+        className={`fixed inset-y-0 left-0 md:relative w-64 h-[100dvh] bg-white border-r border-slate-200 shadow-sm flex flex-col shrink-0 transition-transform z-40 ${
           mobileMenuOpen
             ? "translate-x-0"
             : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <div className="p-6">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="flex items-center justify-between mb-8">
             <div
               className="flex items-center cursor-pointer group"
@@ -112,7 +112,7 @@ export default function OwnerLayout() {
           </nav>
         </div>
 
-        <div className="mt-auto p-6 border-t border-slate-100">
+        <div className="shrink-0 p-6 border-t border-slate-100 bg-white">
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 text-xs font-bold transition-colors"

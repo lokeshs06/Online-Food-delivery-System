@@ -62,19 +62,41 @@ const defaultSettings = {
 
 export const AppProvider = ({ children }) => {
   // Global Settings State
-  const [globalSettings, setGlobalSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem("ofds_admin_settings");
-      if (saved) return { ...defaultSettings, ...JSON.parse(saved) };
-    } catch (e) {
-      console.error("Failed to parse settings", e);
-    }
-    return defaultSettings;
-  });
+  const [globalSettings, setGlobalSettings] = useState(defaultSettings);
 
-  // Sync settings to localStorage and handle theme
+  // Fetch settings from API
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/settings`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data) {
+          // Merge fetched settings over defaults
+          setGlobalSettings(prev => {
+            const newSettings = { ...prev };
+            // Since data.data has keys like 'maintenance', 'general', we merge them
+            for (const key in data.data) {
+              if (newSettings[key]) {
+                newSettings[key] = { ...newSettings[key], ...data.data[key] };
+              } else {
+                newSettings[key] = data.data[key];
+              }
+            }
+            return newSettings;
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch settings from API", e);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("ofds_admin_settings", JSON.stringify(globalSettings));
+    fetchSettings();
+  }, []);
+
+  // Sync theme
+  useEffect(() => {
     if (globalSettings.appearance?.theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
@@ -339,6 +361,36 @@ export const AppProvider = ({ children }) => {
 
   const cartItemsCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
+  // Global fetch interceptor to catch 503 Maintenance Mode
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        if (response.status === 503) {
+          try {
+            const data = await response.clone().json();
+            if (data.maintenance) {
+              // Force maintenance mode in UI if a 503 is detected
+              setGlobalSettings(prev => ({
+                ...prev,
+                maintenance: { ...prev.maintenance, maintenanceMode: true }
+              }));
+            }
+          } catch (e) {
+            // Ignore JSON parse errors on clone
+          }
+        }
+        return response;
+      } catch (error) {
+        throw error;
+      }
+    };
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -376,6 +428,7 @@ export const AppProvider = ({ children }) => {
         addNotification,
         cartSubtotal,
         cartItemsCount,
+        checkAuth,
       }}
     >
       {children}

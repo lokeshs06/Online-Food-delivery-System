@@ -1,7 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import * as Lucide from "lucide-react";
 import { useApp } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_placeholder");
+
+const StripePaymentInner = forwardRef((props, ref) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  useImperativeHandle(ref, () => ({
+    submitPayment: async () => {
+      if (!stripe || !elements) return { error: { message: "Stripe not loaded" } };
+      return await stripe.confirmPayment({ elements, redirect: "if_required" });
+    }
+  }));
+  return <PaymentElement />;
+});
+
+const StripePaymentContainer = forwardRef(({ clientSecret }, ref) => {
+  if (!clientSecret) return <div className="text-xs text-slate-500">Loading payment details...</div>;
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+      <StripePaymentInner ref={ref} />
+    </Elements>
+  );
+});
 
 export default function Checkout() {
   const {
@@ -15,6 +40,7 @@ export default function Checkout() {
     setProfileActiveTab,
     addNotification,
     globalSettings,
+    checkAuth,
   } = useApp();
 
   const navigate = useNavigate();
@@ -50,8 +76,60 @@ export default function Checkout() {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState("");
   const [validatingCoupon, setValidatingCoupon] = useState(false);
+  
+  const [clientSecret, setClientSecret] = useState("");
+  const stripePaymentRef = useRef(null);
+  
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [successOrderId, setSuccessOrderId] = useState(null);
+  const [useWallet, setUseWallet] = useState(false);
+  const [paidByWallet, setPaidByWallet] = useState(false);
 
-  if (cart.length === 0) {
+  useEffect(() => {
+    if (cart.length === 0) return;
+    const fetchPaymentIntent = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/stripe/create-payment-intent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            items: cart.map((c) => ({
+              menuItem: c.item._id,
+              quantity: c.quantity,
+              customizations: c.customizations,
+            })),
+            deliveryType,
+            coupon: appliedCoupon ? appliedCoupon.code : undefined,
+            useWallet,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (data.paidByWallet) {
+            setPaidByWallet(true);
+            setClientSecret("");
+          } else {
+            setPaidByWallet(false);
+            setClientSecret(data.clientSecret);
+          }
+        } else {
+          setClientSecret("");
+          addNotification(data.error || "Failed to initialize payment", "error");
+        }
+      } catch (err) {
+        console.error("Failed to create payment intent:", err);
+        addNotification("Network error while initializing payment", "error");
+      }
+    };
+    
+    const timeoutId = setTimeout(fetchPaymentIntent, 300);
+    return () => clearTimeout(timeoutId);
+  }, [cart, deliveryType, appliedCoupon, useWallet, API_BASE_URL, token]);
+
+  if (cart.length === 0 && !showSuccessPopup && !successOrderId) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
         <Lucide.ShoppingBag size={48} className="text-slate-600 mx-auto" />
@@ -165,30 +243,27 @@ export default function Checkout() {
         return;
       }
 
-      // Simulate Gateway Payment Processing Delay
-      if (paymentMethodType === "card") {
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
+      let paymentIntentId = undefined;
 
-      // 2. If using a new card and "Save Card" is checked, save card first
-      if (paymentMethodType === "card" && !useSavedCard && saveCard) {
-        const cardType = cardNumber.startsWith("4") ? "Visa" : "Mastercard";
-        const cardRes = await fetch(`${API_BASE_URL}/auth/payments`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            cardholderName,
-            cardNumberLast4: cardNumber.slice(-4),
-            expiryDate,
-            cardType,
-          }),
-        });
-        const cardData = await cardRes.json();
-        if (!cardData.success) {
-          addNotification("Failed to save credit card.", "error");
+      if (paymentMethodType === "card" && !paidByWallet) {
+        if (!stripePaymentRef.current) {
+          addNotification("Payment system not ready. Please wait.", "error");
+          setSubmitting(false);
+          return;
+        }
+        
+        const { error, paymentIntent } = await stripePaymentRef.current.submitPayment();
+        
+        if (error) {
+          addNotification(error.message || "Payment failed", "error");
+          setSubmitting(false);
+          return;
+        }
+        
+        if (paymentIntent && paymentIntent.status === "succeeded") {
+          paymentIntentId = paymentIntent.id;
+        } else {
+          addNotification("Payment was not successful.", "error");
           setSubmitting(false);
           return;
         }
@@ -208,26 +283,24 @@ export default function Checkout() {
             quantity: c.quantity,
             customizations: c.customizations,
           })),
-          paymentMethod:
-            paymentMethodType === "cod"
-              ? "cod"
-              : useSavedCard
-                ? "saved_card"
-                : "card",
+          paymentMethod: paymentMethodType === "cod" ? "cod" : "card",
+          paymentIntentId,
           deliveryType,
           scheduledTime:
             deliveryType === "scheduled" ? scheduledTime : undefined,
           coupon: appliedCoupon ? appliedCoupon.code : undefined,
           deliveryAddress: finalAddress,
+          useWallet,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        addNotification("Order placed and paid successfully!", "success");
         clearCart();
+        checkAuth();
         setTrackingOrderId(data.data._id);
-        navigate(`/user/orders/${data.data._id}`);
+        setSuccessOrderId(data.data._id);
+        setShowSuccessPopup(true);
       } else {
         addNotification(data.error || "Failed to place order", "error");
       }
@@ -398,6 +471,28 @@ export default function Checkout() {
               <span>Secure Payment</span>
             </h3>
 
+            {/* Wallet Integration */}
+            {user?.walletBalance > 0 && (
+              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between shadow-sm">
+                <div className="flex items-center space-x-3 text-emerald-800">
+                  <Lucide.Wallet size={20} />
+                  <div>
+                    <p className="font-bold text-sm">Use Wallet Balance</p>
+                    <p className="text-xs opacity-80">Available: ${user.walletBalance.toFixed(2)}</p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={useWallet}
+                    onChange={(e) => setUseWallet(e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-emerald-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-emerald-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+            )}
+
             {/* Payment Type Selection */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
@@ -489,91 +584,21 @@ export default function Checkout() {
                     </div>
                   )}
 
-                {/* New Card Details Form */}
+                {/* Stripe Payment Element */}
                 {!useSavedCard && (
                   <div className="space-y-4 border-t border-slate-200 pt-4 animate-in fade-in duration-200">
                     <h4 className="text-xs font-bold text-slate-800">
                       Credit Card Details
                     </h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                          Cardholder Name
-                        </label>
-                        <input
-                          type="text"
-                          required={!useSavedCard}
-                          value={cardholderName}
-                          onChange={(e) => setCardholderName(e.target.value)}
-                          placeholder="John Doe"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 shadow-sm focus:bg-white focus:outline-none focus:border-brand-500 transition-colors"
-                        />
+                    {paidByWallet ? (
+                      <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl text-center font-bold text-sm border border-emerald-200 shadow-sm">
+                        Order is fully covered by your wallet balance!
                       </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                          Card Number
-                        </label>
-                        <input
-                          type="text"
-                          required={!useSavedCard}
-                          value={cardNumber}
-                          onChange={handleCardNumberChange}
-                          maxLength="19"
-                          placeholder="4000 1234 5678 9010"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 shadow-sm focus:bg-white focus:outline-none focus:border-brand-500 transition-colors font-mono"
-                        />
+                    ) : (
+                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm">
+                        <StripePaymentContainer clientSecret={clientSecret} ref={stripePaymentRef} />
                       </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                          Expiration Date
-                        </label>
-                        <input
-                          type="text"
-                          required={!useSavedCard}
-                          value={expiryDate}
-                          onChange={handleExpiryChange}
-                          maxLength="5"
-                          placeholder="MM/YY"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 shadow-sm focus:bg-white focus:outline-none focus:border-brand-500 transition-colors font-mono"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                          CVC / CVV
-                        </label>
-                        <input
-                          type="password"
-                          required={!useSavedCard}
-                          value={cvc}
-                          onChange={(e) =>
-                            setCvc(e.target.value.replace(/[^0-9]/g, ""))
-                          }
-                          maxLength="3"
-                          placeholder="•••"
-                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 shadow-sm focus:bg-white focus:outline-none focus:border-brand-500 transition-colors font-mono"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2 pt-2">
-                      <input
-                        type="checkbox"
-                        id="save_card"
-                        checked={saveCard}
-                        onChange={(e) => setSaveCard(e.target.checked)}
-                        className="rounded border-slate-300 bg-white text-brand-600 focus:ring-0 cursor-pointer"
-                      />
-                      <label
-                        htmlFor="save_card"
-                        className="text-xs text-slate-600 font-medium select-none cursor-pointer"
-                      >
-                        Save this card securely for future purchases
-                      </label>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -717,6 +742,21 @@ export default function Checkout() {
                 ${grandTotal.toFixed(2)}
               </span>
             </div>
+            
+            {useWallet && user?.walletBalance > 0 && (
+              <>
+                <div className="flex justify-between text-emerald-600 font-bold mt-2 pt-2 border-t border-slate-200">
+                  <span>Wallet Applied</span>
+                  <span>-${Math.min(grandTotal, user.walletBalance).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-lg text-[#1A1A1A] font-black mt-2">
+                  <span>Payable Amount</span>
+                  <span className="text-brand-500 drop-shadow-sm">
+                    ${Math.max(0, grandTotal - user.walletBalance).toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Minimum Order Value Warning */}
@@ -749,6 +789,30 @@ export default function Checkout() {
           </button>
         </div>
       </form>
+
+      {/* Success Popup Modal */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce">
+              <Lucide.CheckCircle2 className="text-emerald-500" size={48} strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Payment Successful!</h2>
+              <p className="text-slate-500 text-sm leading-relaxed">
+                Thank you for your order! Your payment has been securely processed and the restaurant is preparing your food.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate(`/user/orders/${successOrderId}`)}
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 active:scale-95 transition-all flex items-center justify-center space-x-2"
+            >
+              <span>Track Your Order</span>
+              <Lucide.ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

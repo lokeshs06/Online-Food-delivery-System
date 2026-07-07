@@ -169,7 +169,7 @@ export default function OrderTracking() {
         
         <div className="flex items-center space-x-2 shrink-0">
           <button
-            onClick={() => navigate('/user/home')}
+            onClick={() => navigate('/user/restaurants')}
             className="px-6 py-2.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors shadow-sm"
           >
             Explore More
